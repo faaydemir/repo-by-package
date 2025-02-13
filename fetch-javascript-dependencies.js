@@ -79,12 +79,10 @@ const parseDependenciesFromPackageJson = (packageJson) => {
 
     const dependencies = packageJson.dependencies ?? {};
     const devDependencies = packageJson.devDependencies ?? {};
-    const peerDependencies = packageJson.peerDependencies ?? {};
 
     const allDependencies = {
         ...dependencies,
-        ...devDependencies,
-        ...peerDependencies
+        // ...devDependencies,
     };
 
     return Object.entries(allDependencies).map(([name, version]) => {

@@ -66,6 +66,7 @@ model DependencyMapping {
   versionOperator  String? // e.g., "==", ">=", "<", "~", etc.
   version          String? // e.g., "1.0.0"
   versionText      String // e.g., "==1.0.0"
+  dependencyType   String? // e.g., "runtime", "dev", "peer"
   insertedAt       DateTime       @default(now())
 
   @@unique([repoDependencyId, dependencyId])
