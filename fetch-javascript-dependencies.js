@@ -183,14 +183,14 @@ const parseJavaScriptDependenciesTask = async () => {
             try {
                 await processRepoDependencies(repo);
             }
-            catch (e) {
+            catch (error) {
                 if (error instanceof RateLimitError) {
                     const rateLimitResetTime = error.rateLimitting.rateLimitReset;
                     const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
                     await sleep(remainingTimeInMilliseconds);
                 }
                 else {
-                    console.error(e);
+                    console.error(error);
                 }
             }
         }
