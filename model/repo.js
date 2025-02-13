@@ -25,6 +25,40 @@ class Repo {
         this.updatedAt = data.updatedAt;
         this.pushedAt = data.pushedAt;
         this.insertedAt = data.insertedAt;
+        this.packageProcessedAt = data.packageProcessedAt;
+        this.processible = data.processible;
+    }
+
+    /**
+     * Fetch repositories for processing based on languages and count.
+     * @param {Object} params
+     * @param {string[]} params.languages - List of languages to filter repositories.
+     * @param {number} params.count - Number of repositories to fetch.
+     * @returns {Promise<Repo[]>}
+     */
+    static async getForProcessing({ languages, count }) {
+        if (!Array.isArray(languages) || languages.length === 0) {
+            throw new Error('Languages must be a non-empty array.');
+        }
+        if (typeof count !== 'number' || count <= 0) {
+            throw new Error('Count must be a positive number.');
+        }
+        const results = await prisma.repo.findMany({
+            where: {
+                language: {
+                    in: languages
+                },
+                packageProcessedAt: null,
+                processible: true
+                // Add additional conditions if needed, e.g., not processed yet
+            },
+            take: count,
+            orderBy: {
+                updatedAt: 'desc'
+            }
+        });
+
+        return results.map(result => new Repo(result));
     }
 
     static async getById(id) {

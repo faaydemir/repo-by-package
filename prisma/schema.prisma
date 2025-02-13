@@ -10,35 +10,38 @@ generator client {
 }
 
 model Repo {
-  id               String           @id @default(uuid())
-  githubId         BigInt?          @unique
-  owner            String
-  name             String
-  fullName         String?
-  url              String?
-  htmlUrl          String?
-  description      String?
-  language         String?
-  topics           String?
-  defaultBranch    String?
-  stargazersCount  Int?
-  watchersCount    Int?
-  forksCount       Int?
-  openIssuesCount  Int?
-  license          Json?
-  private          Boolean          @default(false)
-  createdAt        DateTime?
-  updatedAt        DateTime?
-  pushedAt         DateTime?
-  insertedAt       DateTime         @default(now())
-  repoRependencies RepoRependency[]
+  id                 String           @id @default(uuid())
+  githubId           BigInt?          @unique
+  owner              String
+  name               String
+  fullName           String?
+  url                String?
+  htmlUrl            String?
+  description        String?
+  language           String?
+  topics             String?
+  defaultBranch      String?
+  stargazersCount    Int?
+  watchersCount      Int?
+  forksCount         Int?
+  openIssuesCount    Int?
+  license            Json?
+  private            Boolean          @default(false)
+  createdAt          DateTime?
+  updatedAt          DateTime?
+  pushedAt           DateTime?
+  insertedAt         DateTime         @default(now())
+  repoRependencies   RepoDependency[]
+  packageProcessedAt DateTime?
+  processible        Boolean          @default(true)
 }
 
-model RepoRependency {
+model RepoDependency {
   id         String   @id @default(uuid())
   repo       Repo     @relation(fields: [repoId], references: [id])
   repoId     String
-  commitDate DateTime // Date/time of the commit used for dependency extraction
+  path       String?
+  commitId   String? // Date/time of the commit used for dependency extraction
   insertedAt DateTime @default(now())
 
   dependencyMappings DependencyMapping[]
@@ -56,8 +59,8 @@ model Dependency {
 
 model DependencyMapping {
   id               String         @id @default(uuid())
-  repoRependency   RepoRependency @relation(fields: [repoRependencyId], references: [id])
-  repoRependencyId String
+  repoDependency   RepoDependency @relation(fields: [repoDependencyId], references: [id])
+  repoDependencyId String
   dependency       Dependency     @relation(fields: [dependencyId], references: [id])
   dependencyId     String
   versionOperator  String? // e.g., "==", ">=", "<", "~", etc.
@@ -65,7 +68,7 @@ model DependencyMapping {
   versionText      String // e.g., "==1.0.0"
   insertedAt       DateTime       @default(now())
 
-  @@unique([repoRependencyId, dependencyId])
+  @@unique([repoDependencyId, dependencyId])
 }
 
 model RepoCrawTaskRun {
