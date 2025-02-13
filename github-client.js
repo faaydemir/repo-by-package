@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 // Retrieve your GitHub token from the environment variables
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -16,7 +16,53 @@ const github = axios.create({
     }
 });
 
+class Repo {
 
+}
+class RateLimit {
+    /**
+     * 
+     * @param {Date} rateLimitReset 
+     * @param {Number} rateLimitRemaining 
+     */
+    constructor(rateLimitReset, rateLimitRemaining) {
+        this.rateLimitReset = rateLimitReset;
+        this.rateLimitRemaining = rateLimitRemaining;
+    }
+}
+class SearchRepoResponse {
+    /**
+     * 
+     * @param {Repo[]} items 
+     * @param {RateLimit} rateLimitting 
+     */
+    constructor(items, rateLimitting) {
+        this.items = items ?? [];
+        this.rateLimitting = rateLimitting;
+    }
+}
+
+
+/**
+ * Custom error class for handling rate limit errors.
+ */
+class RateLimitError extends Error {
+    /**
+     * 
+     * @param {RateLimit} rateLimitting 
+     */
+    constructor(message, rateLimitting) {
+        super(message);
+        this.rateLimitting = rateLimitting;
+    }
+}
+
+class EndOfSeachError extends Error {
+    constructor(message) {
+        super(message);
+    }
+
+}
 
 /**
  * Search repositories by a given language.
@@ -25,9 +71,9 @@ const github = axios.create({
  * @param {string} language - The programming language (e.g., 'javascript' or 'typescript').
  * @param {number} perPage - Number of results per page (max 100).
  * @param {number} page - Page number for pagination.
- * @returns {Promise<Array>} - An array of repository items.
+ * @returns {Promise<SearchRepoResponse>} - An array of repository items.
  */
-async function searchReposByLanguage(language, perPage = 30, page = 1, min_stars = 5000, beforeDate = null) {
+async function searchReposByLanguage(language, perPage = 100, page = 1, min_stars = 5000, beforeDate = null) {
 
     let dateQuery = '';
     if (beforeDate instanceof Date) {
@@ -41,16 +87,34 @@ async function searchReposByLanguage(language, perPage = 30, page = 1, min_stars
         const response = await github.get('/search/repositories', {
             params: {
                 q: query,
-                sort: 'updated', // Order by last updated time
+                sort: 'updated', // Order by last created time
                 order: 'desc',   // Most recent first
                 per_page: perPage,
                 page: page
             }
         });
-        return response.data.items;
+        const rateLimitReset = new Date(response.headers['x-ratelimit-reset'] * 1000);
+        const rateLimitRemaining = parseInt(response.headers['x-ratelimit-remaining']);
+        const rateLimitting = new RateLimit(rateLimitReset, rateLimitRemaining);
+
+        return new SearchRepoResponse(response.data.items, rateLimitting);
     } catch (error) {
-        console.error('Error during repository search:', error.message);
-        return [];
+        const response = error.response;
+        if (response) {
+            const mesasge = response?.data?.message ?? response.statusText;
+            if (response.status === 403) {
+                const rateLimitReset = new Date(response.headers['x-ratelimit-reset'] * 1000);
+                const rateLimitRemaining = parseInt(response.headers['x-ratelimit-remaining']);
+                const rateLimitting = new RateLimit(rateLimitReset, rateLimitRemaining);
+                throw new RateLimitError(mesasge, rateLimitting);
+            }
+            else if (response.status === 422) {
+                console.error('Error during repository search:', response.statusText);
+                throw new EndOfSeachError(mesasge);
+            }
+        }
+
+        throw error;
     }
 }
 
@@ -146,5 +210,5 @@ const githubClient = {
     searchReposByLanguage,
     getPackageJson
 };
-
-module.exports = githubClient;
+export { RateLimitError, EndOfSeachError }
+export default githubClient
