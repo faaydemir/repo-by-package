@@ -29,6 +29,12 @@ class RateLimit {
         this.rateLimitReset = rateLimitReset;
         this.rateLimitRemaining = rateLimitRemaining;
     }
+
+    static fromResponse(response) {
+        const rateLimitReset = new Date(response.headers['x-ratelimit-reset'] * 1000);
+        const rateLimitRemaining = parseInt(response.headers['x-ratelimit-remaining']);
+        return new RateLimit(rateLimitReset, rateLimitRemaining);
+    }
 }
 class SearchRepoResponse {
     /**
@@ -93,20 +99,14 @@ async function searchReposByLanguage(language, perPage = 100, page = 1, min_star
                 page: page
             }
         });
-        const rateLimitReset = new Date(response.headers['x-ratelimit-reset'] * 1000);
-        const rateLimitRemaining = parseInt(response.headers['x-ratelimit-remaining']);
-        const rateLimitting = new RateLimit(rateLimitReset, rateLimitRemaining);
+        return new SearchRepoResponse(response.data.items, RateLimit.fromResponse(response));
 
-        return new SearchRepoResponse(response.data.items, rateLimitting);
     } catch (error) {
         const response = error.response;
         if (response) {
             const mesasge = response?.data?.message ?? response.statusText;
             if (response.status === 403) {
-                const rateLimitReset = new Date(response.headers['x-ratelimit-reset'] * 1000);
-                const rateLimitRemaining = parseInt(response.headers['x-ratelimit-remaining']);
-                const rateLimitting = new RateLimit(rateLimitReset, rateLimitRemaining);
-                throw new RateLimitError(mesasge, rateLimitting);
+                throw new RateLimitError(mesasge, RateLimit.fromResponse(response));
             }
             else if (response.status === 422) {
                 console.error('Error during repository search:', response.statusText);
@@ -122,7 +122,7 @@ async function searchReposByLanguage(language, perPage = 100, page = 1, min_star
  * Fetch and parse the package.json file from a repository.
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
- * @returns {Promise<Object|null>} - The parsed package.json object or null if not found.
+ * @returns {Promise<{path: string, content: Object}[]>} - An array of package.json files and their content.
  */
 async function getPackageJson(owner, repo) {
     try {
@@ -159,8 +159,15 @@ async function getPackageJson(owner, repo) {
         // Remove any null results (in case fetching a file failed)
         return packageJsonFiles.filter(item => item !== null);
     } catch (error) {
-        console.error(`Error retrieving package.json files for ${owner}/${repo}: ${error.message}`);
-        return [];
+        const response = error.response;
+        if (response) {
+            const mesasge = response?.data?.message ?? response.statusText;
+            if (response.status === 403) {
+                throw new RateLimitError(mesasge, RateLimit.fromResponse(response));
+            }
+        }
+
+        throw error;
     }
 }
 
