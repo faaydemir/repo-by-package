@@ -11,7 +11,7 @@ if (!GITHUB_TOKEN) {
 const github = axios.create({
     baseURL: 'https://api.github.com/',
     headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
         'Accept': 'application/vnd.github.v3+json'
     }
 });
