@@ -60,8 +60,9 @@ model DependencyMapping {
   repoRependencyId String
   dependency       Dependency     @relation(fields: [dependencyId], references: [id])
   dependencyId     String
-  versionOperator  String // e.g., "==", ">=", "<", "~", etc.
-  version          String // e.g., "1.0.0"
+  versionOperator  String? // e.g., "==", ">=", "<", "~", etc.
+  version          String? // e.g., "1.0.0"
+  versionText      String // e.g., "==1.0.0"
   insertedAt       DateTime       @default(now())
 
   @@unique([repoRependencyId, dependencyId])
