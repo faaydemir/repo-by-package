@@ -68,10 +68,11 @@ model DependencyMapping {
 }
 
 model RepoCrawTaskRun {
-  id                  String   @id @default(uuid())
-  taskKey             String   @unique
-  maxCreatedAt        DateTime
-  minCreatedAt        DateTime
-  lastRunAt           DateTime
-  isBackwardCompleted Boolean  @default(false) 
+  id                  String    @id @default(uuid())
+  taskKey             String    @unique
+  maxUpdatedAt        DateTime?
+  minUpdatedAt        DateTime?
+  lastRunAt           DateTime?
+  isBackwardCompleted Boolean   @default(false)
+  error               String?
 }
