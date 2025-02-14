@@ -1,4 +1,4 @@
-import githubClient from "./github-client.js";
+import githubClient, { RateLimitError } from "./github-client.js";
 import Dependency from "./model/dependency.js";
 import Repo from "./model/repo.js";
 import DependencyMapping from "./model/dependency-mapping.js"; // Added import statement
@@ -129,11 +129,11 @@ const processRepoDependencies = async (repo) => {
         const dependencies = parseDependenciesFromPackageJson(packageJson.content);
 
         const repoDependency = new RepoDependency({
-            id: uuidv4(),
             repoId: repo.id,
             path: packageJson.path,
             commitId: undefined,
             insertedAt: new Date(),
+            packageProvider: 'npm'
         });
         const depdendencyMappings = [];
 
@@ -148,7 +148,6 @@ const processRepoDependencies = async (repo) => {
             }
             depdendencyMappings.push(new DependencyMapping({
                 repoId: repo.id,
-                repoDependencyId: repoDependency.id,
                 dependencyId: dependency.id,
                 versionOperator: dep.versionOperator,
                 version: dep.version,
@@ -158,16 +157,25 @@ const processRepoDependencies = async (repo) => {
         }
 
         await prisma.$transaction(async (tx) => {
-            await tx.repoDependency.create({
+            const { id } = await tx.repoDependency.create({
                 data: repoDependency
             });
+
             await Promise.all(depdendencyMappings.map(dm => tx.dependencyMapping.create({
-                data: dm
+                data: {
+                    ...dm,
+                    repoDependencyId: id
+                }
             })));
             await Repo.update(repo.id, {
                 packageProcessedAt: new Date()
             });
-        });
+        },
+            {
+                maxWait: 15000, // 5 seconds max wait to connect to prisma
+                timeout: 20000, // 20 seconds
+            }
+        );
     }
 }
 

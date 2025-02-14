@@ -1,5 +1,3 @@
-// schema.prisma
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -10,7 +8,7 @@ generator client {
 }
 
 model Repo {
-  id                 String           @id @default(uuid())
+  id                 Int              @id @default(autoincrement())
   githubId           BigInt?          @unique
   owner              String
   name               String
@@ -37,18 +35,18 @@ model Repo {
 }
 
 model RepoDependency {
-  id                 String              @id @default(uuid())
-  repo               Repo                @relation(fields: [repoId], references: [id])
-  repoId             String
+  id                 Int                @id @default(autoincrement())
+  repo               Repo               @relation(fields: [repoId], references: [id])
+  repoId             Int
   path               String?
-  commitId           String? // Date/time of the commit used for dependency extraction
-  insertedAt         DateTime            @default(now())
+  commitId           String?
+  insertedAt         DateTime           @default(now())
   packageProvider    String?
   dependencyMappings DependencyMapping[]
 }
 
 model Dependency {
-  id       String @id @default(uuid())
+  id       Int    @id @default(autoincrement())
   name     String
   provider String
 
@@ -58,22 +56,22 @@ model Dependency {
 }
 
 model DependencyMapping {
-  id               String         @id @default(uuid())
+  id               Int           @id @default(autoincrement())
   repoDependency   RepoDependency @relation(fields: [repoDependencyId], references: [id])
-  repoDependencyId String
+  repoDependencyId Int
   dependency       Dependency     @relation(fields: [dependencyId], references: [id])
-  dependencyId     String
-  versionOperator  String? // e.g., "==", ">=", "<", "~", etc.
-  version          String? // e.g., "1.0.0"
-  versionText      String // e.g., "==1.0.0"
-  dependencyType   String? // e.g., "runtime", "dev", "peer"
+  dependencyId     Int
+  versionOperator  String?
+  version          String?
+  versionText      String
+  dependencyType   String?
   insertedAt       DateTime       @default(now())
 
   @@unique([repoDependencyId, dependencyId])
 }
 
 model RepoCrawTaskRun {
-  id                  String    @id @default(uuid())
+  id                  Int       @id @default(autoincrement())
   taskKey             String    @unique
   maxUpdatedAt        DateTime?
   minUpdatedAt        DateTime?

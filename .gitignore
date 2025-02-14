@@ -32,3 +32,4 @@ out/
 migrations/
 
 main-test.js
+githup-api-test.http
