@@ -10,6 +10,7 @@ class DependencyMapping {
         this.versionOperator = data.versionOperator;
         this.version = data.version;
         this.versionText = data.versionText;
+        this.dependencyType = data.dependencyType;
         this.insertedAt = data.insertedAt;
     }
 
