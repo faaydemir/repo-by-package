@@ -37,13 +37,13 @@ model Repo {
 }
 
 model RepoDependency {
-  id         String   @id @default(uuid())
-  repo       Repo     @relation(fields: [repoId], references: [id])
-  repoId     String
-  path       String?
-  commitId   String? // Date/time of the commit used for dependency extraction
-  insertedAt DateTime @default(now())
-
+  id                 String              @id @default(uuid())
+  repo               Repo                @relation(fields: [repoId], references: [id])
+  repoId             String
+  path               String?
+  commitId           String? // Date/time of the commit used for dependency extraction
+  insertedAt         DateTime            @default(now())
+  packageProvider    String?
   dependencyMappings DependencyMapping[]
 }
 

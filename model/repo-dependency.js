@@ -9,6 +9,7 @@ class RepoDependency {
         this.commitId = data.commitId;
         this.insertedAt = data.insertedAt;
         this.path = data.path;
+        this.packageProvider = data.packageProvider;
     }
 
     static async getById(id) {
