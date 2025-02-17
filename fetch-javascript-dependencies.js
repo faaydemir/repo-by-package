@@ -1,9 +1,8 @@
 import githubClient, { RateLimitError } from "./github-client.js";
 import Dependency from "./model/dependency.js";
 import Repo from "./model/repo.js";
-import DependencyMapping from "./model/dependency-mapping.js"; // Added import statement
-import RepoDependency from "./model/repo-dependency.js"; // Added import statement
-import { v4 as uuidv4 } from 'uuid';
+import DependencyMapping from "./model/dependency-mapping.js";
+import RepoDependency from "./model/repo-dependency.js";
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -99,28 +98,50 @@ const parseDependenciesFromPackageJson = (packageJson) => {
 }
 
 /**
- * 
+ * @param {number?} idCursor
  * @param {number?} count 
  * @returns {Promise<Repo[]>}
  */
-const getDependenciesToProcess = async (count = 10) => {
+const getDependenciesToProcess = async (idCursor = 0, count = 10) => {
     const repos = await Repo.getForProcessing({
-        languages: ['JavaScript', 'TypeScript'],
-        count
+        // languages: ['JavaScript', 'TypeScript'],
+        count,
+        idCursor
     });
 
     return repos;
 }
+
+//TODO: limit the number items in dependencyCache
+const dependencyCache = {};
+
 /**
- * 
  * @param {Repo} repo 
  */
-const processRepoDependencies = async (repo) => {
+
+//TODO: Refactor: do not save entities in this function return, save in the caller
+const processTSJSDependencies = async (repo) => {
     const packageJsons = await githubClient.getPackageJson(repo.owner, repo.name);
     if (!packageJsons || packageJsons.length === 0) {
         await Repo.update(repo.id, { processible: false });
         return;
     }
+
+    const getOrCreateDependency = async (name, provider) => {
+        const key = `${name}__${provider}`;
+        if (!dependencyCache[key]) {
+            let dependency = await Dependency.firstByNameAndProvider(name, provider);
+            if (!dependency) {
+                dependency = await Dependency.create({
+                    name,
+                    provider
+                });
+            }
+            dependencyCache[key] = dependency;
+        }
+        return dependencyCache[key];
+    }
+
     for (const packageJson of packageJsons) {
         // do not process package json if path contains sample, test, example
         if (packageJson.path.match(/(sample|test|example)/i)) {
@@ -138,14 +159,9 @@ const processRepoDependencies = async (repo) => {
         const depdendencyMappings = [];
 
         for (const dep of dependencies) {
-            // Check if dependency already exists
-            let dependency = await Dependency.firstByNameAndProvider(dep.name, dep.provider);
-            if (!dependency) {
-                dependency = await Dependency.create({
-                    name: dep.name,
-                    provider: dep.provider
-                });
-            }
+
+            let dependency = await getOrCreateDependency(dep.name, dep.provider);
+
             depdendencyMappings.push(new DependencyMapping({
                 repoId: repo.id,
                 dependencyId: dependency.id,
@@ -172,22 +188,45 @@ const processRepoDependencies = async (repo) => {
             });
         },
             {
-                maxWait: 15000, // 5 seconds max wait to connect to prisma
-                timeout: 20000, // 20 seconds
+                maxWait: 60000, // 5 seconds max wait to connect to prisma
+                timeout: 60000, // 20 seconds
             }
         );
     }
 }
 
-const parseJavaScriptDependenciesTask = async () => {
+const repoDependencyProcessorByLanguage = {
+    'JavaScript': processTSJSDependencies,
+    'TypeScript': processTSJSDependencies
+}
+
+/**
+ * 
+ * @param {Repository} repo 
+ */
+const processDependencies = async (repo) => {
+    const processor = repoDependencyProcessorByLanguage[repo.language];
+    console.log(`${new Date()} - Processing repo ${repo.fullName} - ${repo.language}`);
+    if (processor) {
+        await processor(repo);
+    } 
+}
+
+const parseDependenciesTask = async () => {
+    
+    //TODO: Save cursor
+    let idCursor = 0;
     while (true) {
-        const repos = await getDependenciesToProcess(50);
+        const repos = await getDependenciesToProcess(idCursor, 50);
+        idCursor = repos[repos.length - 1].id;
         if (repos.length === 0) {
-            break;
+            await sleep(1000*60*5); // 5 minutes
+            idCursor = 0;
+            continue;
         }
         for (const repo of repos) {
             try {
-                await processRepoDependencies(repo);
+                await processDependencies(repo);
             }
             catch (error) {
                 if (error instanceof RateLimitError) {
@@ -208,7 +247,6 @@ export {
     RepoDependency,
     getDependenciesToProcess,
     parseDependenciesFromPackageJson,
-    processRepoDependencies,
-    parseJavaScriptDependenciesTask,
+    parseDependenciesTask,
 
 }
