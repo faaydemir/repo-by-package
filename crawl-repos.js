@@ -17,37 +17,34 @@ async function crawlReposTask() {
 
                 let taskRun = await RepoCrawTaskRun.getByTaskKey(task_key);
 
-                let updatedAtCursor = null;
-                let isBackwardCompleted = false;
+                let starCursor = leastStars - 1;
+                let isCompleted = false;
+
                 if (taskRun) {
-                    updatedAtCursor = taskRun.minUpdatedAt;
-                    isBackwardCompleted = taskRun.isBackwardCompleted;
+                    starCursor = taskRun.maxStars-1;
+                    isCompleted = taskRun.isBackwardCompleted;
                 } else {
                     taskRun = await RepoCrawTaskRun.create({
                         taskKey: task_key,
+                        maxStars: starCursor,
                     });
                 }
-                let isCompleted = false;
                 let page = 1;
                 while (!isCompleted) {
                     try {
-
-                        let maxUpdatedAt = taskRun.maxUpdatedAt;
-                        let minUpdatedAt = taskRun.minUpdatedAt;
-                        const response = await githubClient.searchReposByLanguage(language, 100, page, leastStars, updatedAtCursor);
+                        let maxStars = taskRun.maxStars;
+                        const response = await githubClient.searchReposByLanguage(language, 100, page, starCursor);
                         page++;
                         isCompleted = response.items.length < 100;
                         if (response.items?.length > 0) {
                             for (const repo of response.items) {
-                                const createdDate = new Date(repo.updated_at);
-                                console.log(`Processing repo ${createdDate} | ${repo.full_name}`);
-                                if (!maxUpdatedAt || createdDate > maxUpdatedAt) {
-                                    maxUpdatedAt = createdDate;
-                                }
-                                if (!minUpdatedAt || createdDate < minUpdatedAt) {
-                                    minUpdatedAt = createdDate;
+                                const stars = repo.stargazers_count;
+                                console.log(`${new Date()} - Saving repo ${repo.full_name} - ${stars}`);
+                                if (stars > maxStars) {
+                                    maxStars = stars;
                                 }
 
+                                //TODO: update if exists
                                 if (!(await Repo.firstByGithubId(repo.id))) {
                                     await Repo.create({
                                         githubId: repo.id,
@@ -75,23 +72,18 @@ async function crawlReposTask() {
                             }
 
                             taskRun = await RepoCrawTaskRun.update(taskRun.id, {
-                                minUpdatedAt: minUpdatedAt,
-                                maxUpdatedAt: maxUpdatedAt,
+                                maxStars: maxStars,
                                 lastRunAt: new Date(),
                                 isBackwardCompleted: isCompleted
                             });
                         }
                     } catch (error) {
                         if (error instanceof EndOfSeachError) {
-                            if (!taskRun.minUpdatedAt)
-                                break
-
-                            updatedAtCursor = taskRun.minUpdatedAt;
+                            starCursor = taskRun.maxStars - 1
                             page = 1;
                         }
                         else if (error instanceof RateLimitError) {
                             const rateLimitResetTime = error.rateLimitting.rateLimitReset;
-                            // todo check date localization
                             const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
                             await sleep(remainingTimeInMilliseconds);
                         } else {
@@ -105,6 +97,7 @@ async function crawlReposTask() {
             if (error instanceof RateLimitError) {
                 const rateLimitResetTime = error.rateLimitting.rateLimitReset;
                 const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
+                console.log(`${new Date()} - Rate limit exceeded. Waiting for ${remainingTimeInMilliseconds} ms.`);
                 await sleep(remainingTimeInMilliseconds);
             } else {
                 console.error(error);
@@ -112,7 +105,7 @@ async function crawlReposTask() {
             }
         }
 
-        await sleep(1000);
+        await sleep(10000);
     }
 }
 

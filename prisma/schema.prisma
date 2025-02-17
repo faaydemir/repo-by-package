@@ -73,8 +73,7 @@ model DependencyMapping {
 model RepoCrawTaskRun {
   id                  Int       @id @default(autoincrement())
   taskKey             String    @unique
-  maxUpdatedAt        DateTime?
-  minUpdatedAt        DateTime?
+  maxStars            Int
   lastRunAt           DateTime?
   isBackwardCompleted Boolean   @default(false)
   error               String?

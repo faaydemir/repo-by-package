@@ -79,22 +79,20 @@ class EndOfSeachError extends Error {
  * @param {number} page - Page number for pagination.
  * @returns {Promise<SearchRepoResponse>} - An array of repository items.
  */
-async function searchReposByLanguage(language, perPage = 100, page = 1, min_stars = 5000, beforeDate = null) {
+async function searchReposByLanguage(language, perPage = 100, page = 1, min_stars = 5000) {
 
-    let dateQuery = '';
-    if (beforeDate instanceof Date) {
-        const dateStr = beforeDate.toISOString().split('T')[0];
-        dateQuery = ` created:<${dateStr}`;
-    }
 
-    const query = `language:${language} stars:>${min_stars} ${dateQuery}`;
+    const languageQuery = language ? `language:${language}` : '';
+    const minStartQuery = min_stars ? `stars:>${min_stars}` : undefined
+
+    const query = [languageQuery, minStartQuery].filter(Boolean).join(' ');
 
     try {
         const response = await github.get('/search/repositories', {
             params: {
                 q: query,
-                sort: 'updated', // Order by last created time
-                order: 'desc',   // Most recent first
+                sort: 'stars', // Order by last created time
+                order: 'asc',   // Most recent first
                 per_page: perPage,
                 page: page
             }

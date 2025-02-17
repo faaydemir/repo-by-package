@@ -10,8 +10,7 @@ class RepoCrawTaskRun {
     constructor(data) {
         this.id = data.id;
         this.taskKey = data.taskKey;
-        this.maxUpdatedAt = data.maxUpdatedAt;
-        this.minUpdatedAt = data.minUpdatedAt;
+        this.maxStars = data.maxStars;
         this.lastRunAt = data.lastRunAt;
         this.isBackwardCompleted = data.isBackwardCompleted;
         this.error = data.error;
@@ -42,16 +41,14 @@ class RepoCrawTaskRun {
 
     static async create({
         taskKey,
-        maxUpdatedAt = null,
-        minUpdatedAt = null,
+        maxStars = null,
         lastRunAt = null,
         isBackwardCompleted = false
     }) {
         const result = await prisma.repoCrawTaskRun.create({
             data: {
                 taskKey,
-                maxUpdatedAt,
-                minUpdatedAt,
+                maxStars,
                 lastRunAt,
                 isBackwardCompleted
             }
