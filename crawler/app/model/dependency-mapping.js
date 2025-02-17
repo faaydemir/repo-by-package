@@ -52,11 +52,6 @@ class DependencyMapping {
         });
     }
 
-    static async delete(id) {
-        return prisma.dependencyMapping.delete({
-            where: { id }
-        });
-    }
 }
 
 export default DependencyMapping;

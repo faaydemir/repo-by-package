@@ -21,8 +21,12 @@ async function crawlReposTask() {
                 let isCompleted = false;
 
                 if (taskRun) {
-                    starCursor = taskRun.maxStars-1;
+                    starCursor = taskRun.maxStars - 1;
                     isCompleted = taskRun.isBackwardCompleted;
+                    const isADayPassedUntilLastRun = (new Date() - taskRun.lastRunAt) > 1000 * 60 * 60 * 24;
+                    if(isADayPassedUntilLastRun){
+                        isCompleted = false;
+                    }
                 } else {
                     taskRun = await RepoCrawTaskRun.create({
                         taskKey: task_key,

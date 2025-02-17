@@ -42,11 +42,6 @@ class Dependency {
         });
     }
 
-    static async delete(id) {
-        return prisma.dependency.delete({
-            where: { id }
-        });
-    }
 }
 
 export default Dependency;
