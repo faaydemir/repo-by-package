@@ -44,12 +44,6 @@ class RepoDependency {
             data: updates
         });
     }
-
-    static async delete(id) {
-        return prisma.repoDependency.delete({
-            where: { id }
-        });
-    }
 }
 
 export default RepoDependency;

@@ -73,7 +73,6 @@ class Repo {
     }
 
     /**
-     * 
      * @param {Partial<Repo>} data 
      * @returns 
      */
@@ -88,12 +87,6 @@ class Repo {
         return prisma.repo.update({
             where: { id },
             data: updates
-        });
-    }
-
-    static async delete(id) {
-        return prisma.repo.delete({
-            where: { id }
         });
     }
 }

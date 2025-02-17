@@ -1,13 +1,3 @@
-import dotenv from 'dotenv';
-import crawlReposTask from './crawl-repos.js';
-import { parseDependenciesTask } from './fetch-javascript-dependencies.js';
-dotenv.config();
+import app from "./app/app.js";
 
-async function main() {
-    await Promise.all([
-        crawlReposTask(),
-        parseDependenciesTask()
-    ]);
-}
-
-main();
+app()
