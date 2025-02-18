@@ -1,4 +1,5 @@
 import { supabase } from "./lib/supabase";
+import cache from "./utils/cache";
 
 export interface Sort {
     field: string;
@@ -9,6 +10,10 @@ export interface Pagination {
     page: number;
     perPage: number;
     total?: number;
+}
+
+export interface RepositoryCountFilter {
+    packageIds?: number[];  
 }
 
 export interface RepositoryFilter {
@@ -89,7 +94,7 @@ interface RepositoryResponseItems {
     packages: Package[]
 }
 
-const getFolderUrlFromPath = (repo:RepositoryResponseItems): string => {
+const getFolderUrlFromPath = (repo: RepositoryResponseItems): string => {
     return `${repo.url}/blob/${repo.defaultBranch}/${repo.path}`
 }
 
@@ -146,7 +151,7 @@ const searchRepositories = async (request: RepositoryFilter): Promise<Repository
     return mergeRepositoriesByProject(data ?? [])
 }
 
-const countRepositories = async (request: RepositoryFilter): Promise<number> => {
+const countRepositories = async (request: RepositoryCountFilter): Promise<number> => {
     const { data, error } = await supabase
         .rpc('count_repositories', {
             p_packageids: request.packageIds ?? []
@@ -179,7 +184,6 @@ const searchPackagesById = async (packageIds: number[]): Promise<PackageWithDeta
         repoCount: pkg.repocount,
         tags: pkg.tags
     })) ?? []
-    
 }
 
 const searchPackages = async (request: SearchPackageRequest): Promise<SearchPackageResponse> => {
@@ -211,10 +215,42 @@ const searchPackages = async (request: SearchPackageRequest): Promise<SearchPack
     }
 }
 
+const generateSearchRepositoriesCacheKey = (request: RepositoryFilter): string => {
+    const packageIds = [...request.packageIds ?? []]
+    packageIds.sort()
+    return `${packageIds?.join(',')}-${request.sort?.field}-${request.sort?.direction}-${request.pagination?.page}-${request.pagination?.perPage}`
+}
+
+const generateCountRepositoriesCacheKey = (request: RepositoryCountFilter): string => {
+    const packageIds = [...request.packageIds ?? []]
+    packageIds.sort()
+    return `${packageIds?.join(',')}`
+}
+
+const generateSearchPackagesCacheKey = (request: SearchPackageRequest): string => {
+    const usedWithPackages = [...request.usedWithPackages ?? []]
+    usedWithPackages.sort()
+    return `${request.query}-${usedWithPackages?.join(',')}-${request.provider}`
+
+}
+
 const client = {
-    searchRepositories,
-    searchPackages,
-    countRepositories,
+    searchRepositories: cache({
+        keyGenerator: generateSearchRepositoriesCacheKey,
+        getter: searchRepositories,
+        count: 20
+    }),
+    countRepositories: cache({
+        keyGenerator: generateCountRepositoriesCacheKey,
+        getter: countRepositories,
+        count: 20
+    }),
+    searchPackages: cache({
+        keyGenerator: generateSearchPackagesCacheKey,
+        getter: searchPackages,
+        count: 20
+    }),
+
     searchPackagesById,
 }
 
