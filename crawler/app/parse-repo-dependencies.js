@@ -218,12 +218,12 @@ const parseDependenciesTask = async () => {
     let idCursor = 0;
     while (true) {
         const repos = await getDependenciesToProcess(idCursor, 50);
-        idCursor = repos[repos.length - 1].id;
         if (repos.length === 0) {
-            await sleep(1000*60*5); // 5 minutes
+            await sleep(1000*60*60); // 1 hour
             idCursor = 0;
             continue;
         }
+        idCursor = repos[repos.length - 1].id;
         for (const repo of repos) {
             try {
                 await processDependencies(repo);
