@@ -138,7 +138,7 @@ export default function Home() {
 
           
           ? <div className="space-y-2 px-4 py-2">
-            <div className="flex items-center justify-center h-14 bg-white border-b border-gray-300 -mx-4 px-4 -mt-2 py-2">
+            <div className="flex items-center flex-wrap justify-center min-h-14 bg-white border-b border-gray-300 -mx-4 px-4 -mt-2 py-2">
               <SelectedPackages
                 packages={state.selectedPackages}
                 onRemove={handlePackageRemove}
