@@ -23,7 +23,7 @@ export function SelectedPackages({ packages, onRemove }: SelectedPackagesProps) 
               size={packageTagSize}
             />
             <span
-              className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600"
+              className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600"
             >
               ×
             </span>

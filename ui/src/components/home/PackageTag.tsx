@@ -77,7 +77,7 @@ const REPO_NAME_MAX_LENGTH = 100;
 export function PackageTag({ name, repoCount, size = 'md', className }: PackageTagProps) {
   const sizeClasses = {
     sm: 'py-0.5 text-xs',
-    md: 'py-2 text-sm',
+    md: 'py-1.5 text-sm',
     lg: 'py-2.5 text-base'
   };
   const color = uniqueColorGenerator(name);
