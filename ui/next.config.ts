@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export", 
   reactStrictMode: true,
-  basePath:"/package-browser"
+  basePath:"/repo-by-package",
 };
 
 export default nextConfig;

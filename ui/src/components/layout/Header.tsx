@@ -1,3 +1,4 @@
+import appInfo from '@/constant/appInfo';
 import Link from 'next/link';
 
 const Header = () => {
@@ -7,7 +8,7 @@ const Header = () => {
         <div className="flex justify-between h-12">
           <div className="flex">
             <Link href="/" className="flex items-center">
-              <span className="text-md font-semibold text-gray-900">Package Browser</span>
+              <span className="text-md font-semibold text-gray-900">{appInfo.name}</span>
             </Link>
           </div>
         </div>

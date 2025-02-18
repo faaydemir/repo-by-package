@@ -11,6 +11,8 @@ import client, { Package, Pagination, Sort } from '@/client';
 import { useSearchParams } from 'next/navigation';
 import { defaultState, State } from './home.state';
 import { searchPackages, searchRepositories } from './home.actions';
+import useUpdateEffect from '@/utils/hooks/useUpdatedEfect';
+import Landing from './Landing';
 
 
 export default function Home() {
@@ -65,7 +67,6 @@ export default function Home() {
     if (state.selectedPackages.length === 0) return;
     await searchRepositories({ packageIds: state.selectedPackages.map(p => p.id), sort: state.repoSort, pagination: state.repoPagination }, setState);
   };
-  
   //TODO: add debounce and result checking
   const loadPackages = async () => {
     await searchPackages({ query: state.searchQuery, usedWithPackages: state.selectedPackages.map(p => p.id) }, setState);
@@ -77,12 +78,11 @@ export default function Home() {
   };
 
   const handlePackageRemove = (pkg: Package) => {
-
     setState(prev => ({ ...prev, repoPagination: defaultState.repoPagination, selectedPackages: prev.selectedPackages.filter(p => p.id !== pkg.id) }));
   };
 
   const handleSort = (sort: Sort) => {
-    setState(prev => ({ ...prev, repoSort: sort }));
+    setState(prev => ({ ...prev, repoSort: sort, repoPagination: defaultState.repoPagination }));
   };
 
   const handlePagination = (pagination: Pagination) => {
@@ -96,19 +96,17 @@ export default function Home() {
   }
 
 
-  useEffect(() => {
+  useUpdateEffect(() => {
     updateQueryParams();
     loadRepositories();
   }, [state.selectedPackages, state.repoSort, state.repoPagination]);
 
-  useEffect(() => {
+  useUpdateEffect(() => {
     loadPackages();
   }, [state.searchQuery, state.selectedPackages]);
 
-
   useEffect(() => {
     loadInitialState();
-    loadPackages();
   }, []);
 
 
@@ -134,9 +132,12 @@ export default function Home() {
             </div>
           </div>
         </div>
-
+        
         <div className="flex-1 space-y-4 min-h-[calc(100vh-8rem)] border-r  border-t border-b border-gray-300">
-          <div className="space-y-2 px-4 py-2">
+          { state.selectedPackages?.length> 0
+
+          
+          ? <div className="space-y-2 px-4 py-2">
             <div className="flex items-center justify-center h-14 bg-white border-b border-gray-300 -mx-4 px-4 -mt-2 py-2">
               <SelectedPackages
                 packages={state.selectedPackages}
@@ -175,6 +176,8 @@ export default function Home() {
               onPaginationChange={handlePagination}
             />
           </div>
+          :<Landing />
+          }
         </div>
       </div>
     </div>

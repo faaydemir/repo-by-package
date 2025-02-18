@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
+import appInfo from "@/constant/appInfo";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -10,8 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Package Browser",
-  description: "Browse and search packages easily",
+  title: appInfo.name,
+  description: appInfo.description,
+  icons: appInfo.favicon,
 };
 
 export default function RootLayout({
