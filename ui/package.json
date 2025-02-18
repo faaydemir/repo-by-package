@@ -1,5 +1,5 @@
 {
-  "name": "package-browser",
+  "name": "repo-by-package",
   "version": "0.1.0",
   "private": true,
   "scripts": {
