@@ -43,6 +43,8 @@ model RepoDependency {
   insertedAt         DateTime           @default(now())
   packageProvider    String?
   dependencyMappings DependencyMapping[]
+
+  @@unique([repoId, path])
 }
 
 model Dependency {
