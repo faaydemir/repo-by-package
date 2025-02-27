@@ -1,55 +1,17 @@
-import githubClient, { RateLimitError } from "./github-client.js";
+import { RateLimitError } from "./github-client.js";
 import Dependency from "./model/dependency.js";
 import Repo from "./model/repo.js";
 import DependencyMapping from "./model/dependency-mapping.js";
 import RepoDependency from "./model/repo-dependency.js";
 import { PrismaClient } from '@prisma/client';
-import { RepoPackages } from "./repo-parse.js";
+import { RepoDependencyList } from "./repo-parse.js";
 import supportedLanguages from "./supported-languages.js";
 import { processTSJSDependencies } from "./js-ts-dependency-parser.js";
+import { REPO_REPROCESS_INTERVAL_DAYS } from "./constants.js";
 
 const prisma = new PrismaClient();
 
-
-/**
- * @param {number?} idCursor
- * @param {number?} count 
- * @returns {Promise<Repo[]>}
- */
-const getDependenciesToProcess = async (idCursor = 0, count = 10) => {
-    const repos = await Repo.getForProcessing({
-        // languages: ['JavaScript', 'TypeScript'],
-        count,
-        idCursor
-    });
-
-    return repos;
-}
-
-//TODO: limit the number items in dependencyCache mode do dependency model
-const dependencyCache = {};
-
-/**@returns {Promise<Dependency>} */
-const getOrCreateDependency = async (name, provider) => {
-    const key = `${name}__${provider}`;
-    if (!dependencyCache[key]) {
-        let dependency = await Dependency.firstByNameAndProvider(name, provider);
-        if (!dependency) {
-            dependency = await Dependency.create({
-                name,
-                provider
-            });
-        }
-        dependencyCache[key] = dependency;
-    }
-    return dependencyCache[key];
-}
-
-
-const repoDependencyProcessorByLanguage = {
-    'JavaScript': processTSJSDependencies,
-    'TypeScript': processTSJSDependencies
-}
+const repoDependencyProcessorByLanguage = {}
 /**
  * 
  * @param {*} language 
@@ -66,9 +28,9 @@ const getLanguageRepoProcessor = (language) => {
 /**
  * 
  * @param {Repository} repo 
- * @returns {Promise<RepoPackages>}
+ * @returns {Promise<RepoDependencyList>}
  */
-const processDependencies = async (repo) => {
+const parseDependencies = async (repo) => {
     const processor = getLanguageRepoProcessor(repo.language);
     console.log(`${new Date()} - Processing repo ${repo.fullName} - ${repo.language}`);
     if (processor) {
@@ -99,103 +61,132 @@ const clearRepoDependencies = async (repoId) => {
             }
         });
     },
-        {
-            maxWait: 60000, // 5 seconds max wait to connect to prisma
-            timeout: 60000, // 20 seconds
-        }
+        { maxWait: 60000, timeout: 60000 }
     );
+}
+
+/**
+ * @param {RepoDependencyList} repoDependencyList 
+ */
+const saveRepoDependencyList = async (repoDependencyList) => {
+    for (const project of repoDependencyList.projects) {
+        const repoDependency = new RepoDependency({
+            repoId: repoDependencyList.id,
+            path: project.path,
+            commitId: project.commitId,
+            insertedAt: new Date(),
+            packageProvider: project.packageProvider
+        });
+
+        const depdendencyMappings = await Promise.all(
+            project.dependencies.map(async dep => {
+                let dependency = await Dependency.getOrCreateCached(dep.name, dep.provider);
+
+                return new DependencyMapping({
+                    repoId: repoDependencyList.id,
+                    dependencyId: dependency.id,
+                    versionOperator: dep.versionOperator,
+                    version: dep.version,
+                    versionText: dep.versionText
+                });
+            })
+        );
+
+        await prisma.$transaction(async (tx) => {
+            const { id } = await tx.repoDependency.create({
+                data: repoDependency
+            });
+
+            await Promise.all(depdendencyMappings.map(dm => tx.dependencyMapping.create({
+                data: {
+                    ...dm,
+                    repoDependencyId: id
+                }
+            })));
+            await Repo.update(repoDependencyList.id, {
+                packageProcessedAt: new Date()
+            });
+        },
+            { maxWait: 60000, timeout: 60000 }
+        );
+    }
+}
+
+/**
+ * @param {Repo} repo 
+ * @returns 
+ */
+const parseAndSaveDependencies = async (repo) => {
+    try {
+        var repoDependencyList = await parseDependencies(repo);
+
+        await clearRepoDependencies(repo.id);
+
+        if (!repoDependencyList) {
+            await Repo.update(repoDependencyList.id, { processible: false });
+        }
+        else {
+            await saveRepoDependencyList(repoDependencyList);
+        }
+    }
+    catch (error) {
+        if (error instanceof RateLimitError) {
+            const rateLimitResetTime = error.rateLimitting.rateLimitReset;
+            const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
+            await sleep(remainingTimeInMilliseconds);
+        }
+        else {
+            console.error(error);
+        }
+    }
+}
+
+const processUnprocessedRepos = async () => {
+    let idCursor = 0;
+    do {
+        const repos = await Repo.getForProcessing({ count, idCursor });
+        if (repos.length === 0) return;
+        for (const repo of repos) {
+            await parseAndSaveDependencies(repo);
+        }
+        idCursor = repos[repos.length - 1].id;
+    }
+    while (true);
+}
+
+
+const reprocessRepos = async () => {
+    let idCursor = 0;
+    do {
+        const minDateToProcess = new Date(Date.now() - REPO_REPROCESS_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
+        let repos = await Repo.getReposToReProcess(idCursor, minDateToProcess, 50);
+        if (repos.length === 0) return;
+        for (const repo of repos) {
+            await parseAndSaveDependencies(repo);
+        }
+        idCursor = repos[repos.length - 1].id;
+    }
+    while (true);
 }
 
 const parseDependenciesTask = async () => {
     setLanguageRepoProcessor(supportedLanguages.JavaScript, processTSJSDependencies);
     setLanguageRepoProcessor(supportedLanguages.TypeScript, processTSJSDependencies);
 
-    /* TODO:
-    - check repo last processed time if it is less than 7 days, skip
-    - if repo has has dependency mapping skip or delete
-    - create a generic dependency map response
-    */
-    //TODO: Save cursor
-    let idCursor = 0;
     while (true) {
-        const repos = await getDependenciesToProcess(idCursor, 50);
-        if (repos.length === 0) {
+        try {
+            await processUnprocessedRepos();
+            await reprocessRepos();
             await sleep(REPO_CRAWL_TASK_RUN_INTERVAL);
-            idCursor = 0;
-            continue;
         }
-        idCursor = repos[repos.length - 1].id;
-        for (const repo of repos) {
-            try {
-                var repoPakages = await processDependencies(repo);
-
-                // clear RepoDependency and DependencyMapping 
-                await clearRepoDependencies(repo.id);
-
-                if (!repoPakages) {
-                    await Repo.update(repoPakages.id, { processible: false });
-                    continue;
-                }
-
-                for (const project of repoPakages.projects) {
-                    const repoDependency = new RepoDependency({
-                        repoId: repoPakages.id,
-                        path: project.path,
-                        commitId: project.commitId,
-                        insertedAt: new Date(),
-                        packageProvider: project.packageProvider
-                    });
-
-                    const depdendencyMappings = await project.packages.map(async dep => {
-                        let dependency = await getOrCreateDependency(dep.name, dep.provider);
-
-                        return new DependencyMapping({
-                            repoId: repoPakages.id,
-                            dependencyId: dependency.id,
-                            versionOperator: dep.versionOperator,
-                            version: dep.version,
-                            versionText: dep.versionText
-                        });
-                    });
-
-                    await prisma.$transaction(async (tx) => {
-                        const { id } = await tx.repoDependency.create({
-                            data: repoDependency
-                        });
-
-                        await Promise.all(depdendencyMappings.map(dm => tx.dependencyMapping.create({
-                            data: {
-                                ...dm,
-                                repoDependencyId: id
-                            }
-                        })));
-                        await Repo.update(repo.id, {
-                            packageProcessedAt: new Date()
-                        });
-                    },
-                        {
-                            maxWait: 60000, // 5 seconds max wait to connect to prisma
-                            timeout: 60000, // 20 seconds
-                        }
-                    );
-                }
-            }
-            catch (error) {
-                if (error instanceof RateLimitError) {
-                    const rateLimitResetTime = error.rateLimitting.rateLimitReset;
-                    const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
-                    await sleep(remainingTimeInMilliseconds);
-                }
-                else {
-                    console.error(error);
-                }
-            }
+        catch (error) {
+            console.error(error);
         }
     }
 }
 
 
 export {
-    getDependenciesToProcess,
     parseDependenciesTask,
+    processUnprocessedRepos
 }

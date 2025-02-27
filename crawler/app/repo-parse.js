@@ -1,4 +1,4 @@
-export class RepoPackages {
+export class RepoDependencyList {
     constructor({
         id,
     }) {
@@ -7,7 +7,7 @@ export class RepoPackages {
         this.projects = [];
     }
 }
-export class Package {
+export class RepoDependency {
     constructor({
         name,
         version,
@@ -35,7 +35,7 @@ export class Project {
         this.path = path;
         this.commitId = commitId;
         this.packageProvider = packageProvider
-        /**@type {Package[]} */
-        this.packages = [];
+        /**@type {RepoDependency[]} */
+        this.dependencies = [];
     }
 }

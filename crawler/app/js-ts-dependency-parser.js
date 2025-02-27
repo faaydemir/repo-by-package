@@ -1,5 +1,5 @@
 import githubClient from "./github-client.js";
-import { RepoPackages } from "./repo-parse.js";
+import { RepoDependencyList } from "./repo-parse.js";
 
 
 const parseVersionText = (version) => {
@@ -77,14 +77,14 @@ const parseDependenciesFromPackageJson = (packageJson) => {
 /**
  * 
  * @param {*} repo 
- * @returns {Promise<RepoPackages>}
+ * @returns {Promise<RepoDependencyList>}
  */
 export const processTSJSDependencies = async (repo) => {
     const packageJsons = await githubClient.getPackageJson(repo.owner, repo.name);
     if (!packageJsons || packageJsons.length === 0) {
         return undefined;
     }
-    const repoPackages = new RepoPackages({
+    const repoPackages = new RepoDependencyList({
         id: repo.id
     });
 
