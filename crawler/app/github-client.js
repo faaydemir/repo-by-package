@@ -4,7 +4,6 @@ import axios from 'axios';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 if (!GITHUB_TOKEN) {
     console.error('Please set the GITHUB_TOKEN environment variable.');
-    process.exit(1);
 }
 
 // Create an Axios instance with GitHub API defaults
@@ -16,6 +15,7 @@ const github = axios.create({
     }
 });
 
+//TODO: add repo properties
 class Repo {
 
 }

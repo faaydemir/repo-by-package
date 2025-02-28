@@ -4,7 +4,7 @@ import Repo from "./model/repo.js";
 import DependencyMapping from "./model/dependency-mapping.js";
 import RepoDependency from "./model/repo-dependency.js";
 import { PrismaClient } from '@prisma/client';
-import { RepoDependencyList } from "./repo-parse.js";
+import { RepoDependencyList } from "./repo-dependency-list.js";
 import supportedLanguages from "./supported-languages.js";
 import { processTSJSDependencies } from "./js-ts-dependency-parser.js";
 import { REPO_REPROCESS_INTERVAL_DAYS } from "./constants.js";
@@ -39,36 +39,46 @@ const parseDependencies = async (repo) => {
 }
 
 const clearRepoDependencies = async (repoId) => {
+    if (!repoId) throw new Error('repoId is required');
+    
+    try {
+        const repoDependencies = await RepoDependency.getAllByRepoId(repoId);
+        if (!repoDependencies || repoDependencies.length === 0) {
+            return;
+        }
 
-    const repoDependencies = await RepoDependency.getAllByRepoId(repoId);
-    if (!repoDependencies || repoDependencies.length === 0) {
-        return;
-    }
-
-    await prisma.$transaction(async (tx) => {
-        await tx.dependencyMapping.deleteMany({
-            where: {
-                repoDependencyId: {
-                    in: repoDependencies.map(rd => rd.id)
+        await prisma.$transaction(async (tx) => {
+            await tx.dependencyMapping.deleteMany({
+                where: {
+                    repoDependencyId: {
+                        in: repoDependencies.map(rd => rd.id)
+                    }
                 }
-            }
-        });
-        await tx.repoDependency.deleteMany({
-            where: {
-                id: {
-                    in: repoDependencies.map(rd => rd.id)
+            });
+            await tx.repoDependency.deleteMany({
+                where: {
+                    id: {
+                        in: repoDependencies.map(rd => rd.id)
+                    }
                 }
-            }
-        });
-    },
+            });
+        },
         { maxWait: 60000, timeout: 60000 }
-    );
+        );
+    } catch (error) {
+        console.error(`Failed to clear dependencies for repo ${repoId}:`, error);
+        throw error;
+    }
 }
 
 /**
  * @param {RepoDependencyList} repoDependencyList 
  */
 const saveRepoDependencyList = async (repoDependencyList) => {
+    if (!repoDependencyList || !repoDependencyList.projects || !Array.isArray(repoDependencyList.projects)) {
+        throw new Error('Invalid repoDependencyList structure');
+    }
+
     for (const project of repoDependencyList.projects) {
         const repoDependency = new RepoDependency({
             repoId: repoDependencyList.id,

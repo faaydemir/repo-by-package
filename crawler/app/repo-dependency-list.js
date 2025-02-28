@@ -10,10 +10,10 @@ export class RepoDependencyList {
 export class RepoDependency {
     constructor({
         name,
+        provider,
         version,
         minVersion,
         maxVersion,
-        versionOperator,
         versionText,
     }) {
         this.provider = provider;
@@ -21,7 +21,6 @@ export class RepoDependency {
         this.version = version;
         this.minVersion = minVersion;
         this.maxVersion = maxVersion;
-        this.versionOperator = versionOperator;
         this.versionText = versionText;
     }
 }
@@ -31,11 +30,12 @@ export class Project {
         path,
         commitId,
         packageProvider,
+        dependencies
     }) {
         this.path = path;
         this.commitId = commitId;
         this.packageProvider = packageProvider
         /**@type {RepoDependency[]} */
-        this.dependencies = [];
+        this.dependencies = dependencies;
     }
 }

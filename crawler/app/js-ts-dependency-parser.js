@@ -1,58 +1,81 @@
 import githubClient from "./github-client.js";
-import { RepoDependencyList } from "./repo-parse.js";
+import { Project, RepoDependency, RepoDependencyList } from "./repo-dependency-list.js";
+import semver from 'semver';
 
-
-const parseVersionText = (version) => {
+/**
+ * Parses version text and returns version info including min and max versions
+ * @param {string} version 
+ * @returns {{version: string, minVersion: string, maxVersion: string}}
+ */
+export const parseVersionText = (version) => {
     if (!version || typeof version !== 'string') {
-        return { version: undefined, operator: undefined };
+        return { version: undefined, minVersion: undefined, maxVersion: undefined };
     }
 
     // Handle URL, file, and latest cases
     if (version.startsWith('http') || version.startsWith('file:') || version === 'latest') {
-        return { version, operator: undefined };
+        return { version, minVersion: version, maxVersion: version };
     }
 
-    // Regex for capturing version patterns and operators
-    const regex = /([<>]=?|~|\^|x)?\s*([0-9]+(?:\.[0-9]+(?:\.[0-9]+)?)?|x)/g;
-
-    let match;
-    let maxVersion = null;
-    let operator = undefined;
-
-    while ((match = regex.exec(version)) !== null) {
-        const [_, op, ver] = match;
-
-        if (!maxVersion || compareVersions(ver, maxVersion) > 0) {
-            maxVersion = ver;
-            operator = op || undefined;
+    try {
+        // Clean the version string
+        const cleanVersion = version.replace(/[~^]/g, '');
+        
+        if (version.startsWith('~')) {
+            // ~1.2.3 = >=1.2.3 <1.3.0
+            const parsed = semver.parse(cleanVersion);
+            if (!parsed) return { version: cleanVersion, minVersion: cleanVersion, maxVersion: cleanVersion };
+            
+            return {
+                version: cleanVersion,
+                minVersion: cleanVersion,
+                maxVersion: `${parsed.major}.${parsed.minor + 1}.0`
+            };
+        } else if (version.startsWith('^')) {
+            // ^1.2.3 = >=1.2.3 <2.0.0
+            const parsed = semver.parse(cleanVersion);
+            if (!parsed) return { version: cleanVersion, minVersion: cleanVersion, maxVersion: cleanVersion };
+            
+            return {
+                version: cleanVersion,
+                minVersion: cleanVersion,
+                maxVersion: `${parsed.major + 1}.0.0`
+            };
+        } else if (version.includes('>=') || version.includes('<=') || version.includes('>') || version.includes('<')) {
+            const range = new semver.Range(version);
+            // Get the first comparator for min version and last for max version
+            const minComparator = range.set[0][0];
+            const maxComparator = range.set[0][range.set[0].length - 1];
+            
+            return {
+                version: minComparator.semver.version,
+                minVersion: minComparator.semver.version,
+                maxVersion: maxComparator.semver.version
+            };
+        } else {
+            // Exact version or x-ranges
+            return {
+                version: cleanVersion,
+                minVersion: cleanVersion,
+                maxVersion: cleanVersion
+            };
         }
+    } catch (error) {
+        // If semver parsing fails, return the original version for all fields
+        return {
+            version: version,
+            minVersion: version,
+            maxVersion: version
+        };
     }
-
-    return { version: maxVersion || undefined, operator };
 };
-
-const compareVersions = (v1, v2) => {
-    if (v1 === 'x' || v2 === 'x') return 0; // Ignore wildcard comparisons
-
-    const parts1 = v1.split('.').map(n => parseInt(n) || 0);
-    const parts2 = v2.split('.').map(n => parseInt(n) || 0);
-
-    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-        const num1 = parts1[i] || 0;
-        const num2 = parts2[i] || 0;
-        if (num1 !== num2) return num1 - num2;
-    }
-    return 0;
-};
-
 
 /**
  * 
  * @param {*} packageJson 
- * @returns {Package[]}
+ * @returns {RepoDependency[]}
  */
-const parseDependenciesFromPackageJson = (packageJson) => {
-
+export const parseDependenciesFromPackageJson = (packageJson) => {
     const dependencies = packageJson.dependencies ?? {};
     const devDependencies = packageJson.devDependencies ?? {};
 
@@ -64,12 +87,13 @@ const parseDependenciesFromPackageJson = (packageJson) => {
     return Object.entries(allDependencies).map(([name, version]) => {
         const provider = 'npm';
         const parsedVersion = parseVersionText(version);
-        return new PackageJsonDependency({
+        return new RepoDependency({
             name,
             provider,
             versionText: version,
             version: parsedVersion.version,
-            versionOperator: parsedVersion.operator
+            minVersion: parsedVersion.minVersion,
+            maxVersion: parsedVersion.maxVersion
         });
     });
 }
@@ -84,7 +108,7 @@ export const processTSJSDependencies = async (repo) => {
     if (!packageJsons || packageJsons.length === 0) {
         return undefined;
     }
-    const repoPackages = new RepoDependencyList({
+    const dependencyList = new RepoDependencyList({
         id: repo.id
     });
 
@@ -98,22 +122,11 @@ export const processTSJSDependencies = async (repo) => {
         const project = new Project({
             commitId: undefined,
             path: packageJson.path,
-            packageProvider: 'npm'
+            packageProvider: 'npm',
+            dependencies
         });
-
-        for (const dep of dependencies) {
-
-            project.packages.push(new
-                Package({
-                    name: dep.name,
-                    version: dep.version,
-                    versionOperator: dep.versionOperator,
-                    versionText: dep.versionText,
-                    minVersion: dep.minVersion,
-                    maxVersion: dep.maxVersion
-                }));
-
-        }
+        
+        dependencyList.projects.push(project);
     }
-    return repoPackages;
+    return dependencyList;
 }
