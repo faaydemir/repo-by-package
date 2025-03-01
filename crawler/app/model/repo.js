@@ -36,7 +36,7 @@ class Repo {
      * @param {number} params.idCursor - Cursor to fetch repositories after this id.
      * @returns {Promise<Repo[]>}
      */
-    static async getForProcessing({ count, idCursor = 0 }) {
+    static async getForProcessing({ count = 50, idCursor = 0 }) {
         if (typeof count !== 'number' || count <= 0) {
             throw new Error('Count must be a positive number.');
         }
@@ -48,6 +48,37 @@ class Repo {
                     gt: idCursor
                 }
                 // Add additional conditions if needed, e.g., not processed yet
+            },
+            take: count,
+            orderBy: {
+                id: 'asc'
+            }
+        });
+
+        return results.map(result => new Repo(result));
+    }
+
+    /**
+     * Fetch repositories for reprocessing based on last processed date
+     * @param {number} idCursor - Cursor to fetch repositories after this id
+     * @param {Date} minDate - Minimum date threshold for reprocessing
+     * @param {number} count - Number of repositories to fetch
+     * @returns {Promise<Repo[]>}
+     */
+    static async getReposToReProcess({ minDate, idCursor = 0, count = 50 }) {
+        if (!minDate || !(minDate instanceof Date)) {
+            throw new Error('minDate must be a valid Date object');
+        }
+
+        const results = await prisma.repo.findMany({
+            where: {
+                id: {
+                    gt: idCursor
+                },
+                processible: true,
+                packageProcessedAt: {
+                    lt: minDate
+                }
             },
             take: count,
             orderBy: {

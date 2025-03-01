@@ -1,30 +1,28 @@
 
+import { LEAST_START_COUNT_FOR_REPO } from './constants.js';
 import githubClient, { RateLimitError, EndOfSeachError } from './github-client.js';
 import RepoCrawTaskRun from './model/repo-craw-task-run.js';
 import Repo from './model/repo.js';
 import sleep from './sleep.js';
-const languages = ['javascript', 'typescript'];
-const leastStars = 5000;
-
-
+import supportedLanguages from './supported-languages.js';
 
 async function crawlReposTask() {
 
     while (true) {
         try {
-            for (const language of languages) {
-                const task_key = `crawl_repos_${language}_${leastStars}`;
+            for (const language of Object.values(supportedLanguages)) {
+                const task_key = `crawl_repos_${language}_${LEAST_START_COUNT_FOR_REPO}`;
 
                 let taskRun = await RepoCrawTaskRun.getByTaskKey(task_key);
 
-                let starCursor = leastStars - 1;
+                let starCursor = LEAST_START_COUNT_FOR_REPO - 1;
                 let isCompleted = false;
 
                 if (taskRun) {
                     starCursor = taskRun.maxStars - 1;
                     isCompleted = taskRun.isBackwardCompleted;
                     const isADayPassedUntilLastRun = (new Date() - taskRun.lastRunAt) > 1000 * 60 * 60 * 24;
-                    if(isADayPassedUntilLastRun){
+                    if (isADayPassedUntilLastRun) {
                         isCompleted = false;
                     }
                 } else {
@@ -47,31 +45,35 @@ async function crawlReposTask() {
                                 if (stars > maxStars) {
                                     maxStars = stars;
                                 }
+                                const repoProps = {
+                                    githubId: repo.id,
+                                    owner: repo.owner.login,
+                                    name: repo.name,
+                                    fullName: repo.full_name,
+                                    url: repo.url,
+                                    htmlUrl: repo.html_url,
+                                    description: repo.description,
+                                    createdAt: new Date(repo.created_at),
+                                    updatedAt: new Date(repo.updated_at),
+                                    pushedAt: new Date(repo.pushed_at),
+                                    defaultBranch: repo.default_branch,
+                                    stargazersCount: repo.stargazers_count,
+                                    watchersCount: repo.watchers_count,
+                                    forksCount: repo.forks_count,
+                                    openIssuesCount: repo.open_issues_count,
+                                    topics: repo.topics?.join(',') ?? '',
+                                    license: repo.license,
+                                    insertedAt: new Date(),
+                                    language: repo.language,
+                                    private: repo.private
+                                };
 
-                                //TODO: update if exists
-                                if (!(await Repo.firstByGithubId(repo.id))) {
-                                    await Repo.create({
-                                        githubId: repo.id,
-                                        owner: repo.owner.login,
-                                        name: repo.name,
-                                        fullName: repo.full_name,
-                                        url: repo.url,
-                                        htmlUrl: repo.html_url,
-                                        description: repo.description,
-                                        createdAt: new Date(repo.created_at),
-                                        updatedAt: new Date(repo.updated_at),
-                                        pushedAt: new Date(repo.pushed_at),
-                                        defaultBranch: repo.default_branch,
-                                        stargazersCount: repo.stargazers_count,
-                                        watchersCount: repo.watchers_count,
-                                        forksCount: repo.forks_count,
-                                        openIssuesCount: repo.open_issues_count,
-                                        topics: repo.topics?.join(',') ?? '',
-                                        license: repo.license,
-                                        insertedAt: new Date(),
-                                        language: repo.language,
-                                        private: repo.private
-                                    });
+                                const existingRepo = await Repo.firstByGithubId(repo.id);
+                                if (existingRepo) {
+                                    await Repo.update(existingRepo.id, repoProps);
+                                }
+                                else {
+                                    await Repo.create(repoProps);
                                 }
                             }
 

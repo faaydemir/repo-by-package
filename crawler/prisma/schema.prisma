@@ -43,6 +43,8 @@ model RepoDependency {
   insertedAt         DateTime           @default(now())
   packageProvider    String?
   dependencyMappings DependencyMapping[]
+
+  @@unique([repoId, path])
 }
 
 model Dependency {
@@ -61,8 +63,9 @@ model DependencyMapping {
   repoDependencyId Int
   dependency       Dependency     @relation(fields: [dependencyId], references: [id])
   dependencyId     Int
-  versionOperator  String?
   version          String?
+  minVersion       String?
+  maxVersion       String?
   versionText      String
   dependencyType   String?
   insertedAt       DateTime       @default(now())

@@ -2,6 +2,9 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+//TODO: limit the number items in dependencyCache mode do dependency model
+const dependencyCache = {};
+
 class Dependency {
     constructor(data) {
         this.id = data.id;
@@ -14,6 +17,24 @@ class Dependency {
             where: { id }
         });
         return result ? new Dependency(result) : null;
+    }
+
+
+
+    /**@returns {Promise<Dependency>} */
+    static async getOrCreateCached(name, provider) {
+        const key = `${name}__${provider}`;
+        if (!dependencyCache[key]) {
+            let dependency = await Dependency.firstByNameAndProvider(name, provider);
+            if (!dependency) {
+                dependency = await Dependency.create({
+                    name,
+                    provider
+                });
+            }
+            dependencyCache[key] = dependency;
+        }
+        return dependencyCache[key];
     }
 
     static async firstByNameAndProvider(name, provider) {

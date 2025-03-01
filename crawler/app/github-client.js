@@ -1,10 +1,10 @@
 import axios from 'axios';
+import { LEAST_START_COUNT_FOR_REPO } from './constants.js';
 
 // Retrieve your GitHub token from the environment variables
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 if (!GITHUB_TOKEN) {
     console.error('Please set the GITHUB_TOKEN environment variable.');
-    process.exit(1);
 }
 
 // Create an Axios instance with GitHub API defaults
@@ -16,6 +16,7 @@ const github = axios.create({
     }
 });
 
+//TODO: add repo properties
 class Repo {
 
 }
@@ -54,7 +55,7 @@ class SearchRepoResponse {
  */
 class RateLimitError extends Error {
     /**
-     * 
+     * @param {string} message
      * @param {RateLimit} rateLimitting 
      */
     constructor(message, rateLimitting) {
@@ -79,7 +80,7 @@ class EndOfSeachError extends Error {
  * @param {number} page - Page number for pagination.
  * @returns {Promise<SearchRepoResponse>} - An array of repository items.
  */
-async function searchReposByLanguage(language, perPage = 100, page = 1, min_stars = 5000) {
+async function searchReposByLanguage(language, perPage = 100, page = 1, min_stars = LEAST_START_COUNT_FOR_REPO) {
 
 
     const languageQuery = language ? `language:${language}` : '';

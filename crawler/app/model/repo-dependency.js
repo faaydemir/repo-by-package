@@ -19,11 +19,11 @@ class RepoDependency {
         return result ? new RepoDependency(result) : null;
     }
 
-    static async getByRepoId(repoId) {
-        const result = await prisma.repoDependency.findFirst({
+    static async getAllByRepoId(repoId) {
+        const result = await prisma.repoDependency.findMany({
             where: { repoId }
         });
-        return result ? new RepoDependency(result) : null;
+        return result ? result.map(r => new RepoDependency(r)) : null;
     }
 
     /**
