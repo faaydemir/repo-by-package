@@ -3,7 +3,7 @@ import React from 'react';
 const SUPPORTED_TECHNOLOGIES = ['javascript', 'typescript', 'python', 'pypi', 'npm'] as const;
 type SupportedTechnology = typeof SUPPORTED_TECHNOLOGIES[number];
 
-type IconSize = 'sm' | 'md' | 'lg';
+type IconSize = 'xs' | 'sm' | 'md' | 'lg';
 
 interface TechIconProps {
   tech: string;
@@ -13,6 +13,8 @@ interface TechIconProps {
 
 const getSizeClass = (size: IconSize): string => {
   switch (size) {
+    case 'xs':
+      return 'w-5 h-5';
     case 'sm':
       return 'w-7 h-7';
     case 'lg':
@@ -30,21 +32,21 @@ const getIconPath = (tech: string): string => {
   return '';
 };
 
-export const TechIcon: React.FC<TechIconProps> = ({ 
-  tech, 
-  size = 'md', 
-  showText = false 
+export const TechIcon: React.FC<TechIconProps> = ({
+  tech,
+  size = 'md',
+  showText = false
 }) => {
   const iconPath = getIconPath(tech);
   const sizeClass = getSizeClass(size);
-  
+
   if (!iconPath) {
     return <span>❓</span>;
   }
 
   return (
     <div className="inline-flex items-center gap-2 rounded-sm ">
-      <img 
+      <img
         src={iconPath}
         alt={`${tech} icon`}
         className={`inline-block ${sizeClass}`}

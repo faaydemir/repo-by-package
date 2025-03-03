@@ -2,6 +2,7 @@ import { Package, Repository } from '@/client';
 import { PackageTag } from '@/components/home/PackageTag';
 import Link from 'next/link';
 import { useState } from 'react';
+import { TechIcon } from '../common/TechIcon';
 
 interface RepositoryCardProps {
   repository: Repository;
@@ -52,11 +53,7 @@ export function RepositoryCard({ repository, onPackageClick }: RepositoryCardPro
           >
             {name}
           </Link>
-          {language && (
-            <span className="inline-flex items-center rounded-sm bg-gray-100 px-2 py-1 text-xs font-medium">
-              {language}
-            </span>
-          )}
+          {language && (<TechIcon tech={language} size='xs' />)}
         </div>
         <div className="flex items-center gap-4 text-gray-600">
           <span className="text-xs text-gray-500">Updated {formatDate(updatedAt)}</span>
