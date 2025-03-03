@@ -169,52 +169,64 @@ async function getPackageJson(owner, repo) {
         throw error;
     }
 }
+/**
+ * Fetch and parse the package.json file from a repository.
+ * @param {string} owner - Repository owner.
+ * @param {string} repo - Repository name.
+ * @param {string[]} filenames - File name to search for.
+ * @returns {Promise<{path: string, content: Object}[]>} - An array of package.json files and their content.
+ */
+async function getFileContents(owner, repo, filenames) {
+    try {
+        // First, fetch repository details to get the default branch (e.g., 'main' or 'master')
+        const repoRes = await github.get(`/repos/${owner}/${repo}`);
+        const defaultBranch = repoRes.data.default_branch || 'master';
 
+        // Fetch the repository tree recursively
+        const treeRes = await github.get(`/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`);
+        const tree = treeRes.data.tree;
 
-// async function searchPackageJsonFiles(owner, repo) {
-//     try {
-//         // Build the query for code search.
-//         // This will search in the specified repository for files named package.json.
-//         const query = `repo:${owner}/${repo} filename:package.json`;
+        // Filter the tree for the specified filenames (ensure we only consider blobs, i.e. actual files)
+        const filePaths = tree.filter(item => item.type === 'blob' && filenames.includes(item.path.toLowerCase()));
 
-//         // Use the Code Search API
-//         const searchResponse = await github.get('/search/code', {
-//             params: { q: query }
-//         });
-//         const items = searchResponse.data.items;
+        // For each specified file found, fetch its content using the contents API
+        const files = await Promise.all(
+            filePaths.map(async (file) => {
+                try {
+                    const fileRes = await github.get(`/repos/${owner}/${repo}/contents/${file.path}`);
+                    const { content, encoding } = fileRes.data;
+                    if (encoding === 'base64') {
+                        const fileStr = Buffer.from(content, 'base64').toString('utf8');
+                        const fileContent = fileStr;
+                        return { path: file.path, content: fileContent };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error(`Error fetching ${file.path} in ${owner}/${repo}: ${error.message}`);
+                    return null;
+                }
+            })
+        );
 
-//         // For each found file, fetch its content using its API URL.
-//         const packageJsonFiles = await Promise.all(
-//             items.map(async (item) => {
-//                 try {
-//                     // item.url points to the API endpoint for the file's content.
-//                     const fileRes = await github.get(item.url);
-//                     const { content, encoding } = fileRes.data;
-//                     if (encoding === 'base64') {
-//                         const jsonStr = Buffer.from(content, 'base64').toString('utf8');
-//                         const jsonContent = JSON.parse(jsonStr);
-//                         return { path: item.path, content: jsonContent };
-//                     }
-//                     return null;
-//                 } catch (error) {
-//                     console.error(`Error fetching file at ${item.path}: ${error.message}`);
-//                     return null;
-//                 }
-//             })
-//         );
+        // Remove any null results (in case fetching a file failed)
+        return files.filter(item => item !== null);
+    } catch (error) {
+        const response = error.response;
+        if (response) {
+            const message = response?.data?.message ?? response.statusText;
+            if (response.status === 403) {
+                throw new RateLimitError(message, RateLimit.fromResponse(response));
+            }
+        }
 
-//         // Filter out any null results (if any files failed to fetch)
-//         return packageJsonFiles.filter(file => file !== null);
-//     } catch (error) {
-//         console.error(`Error searching for package.json in ${owner}/${repo}: ${error.message}`);
-//         return [];
-//     }
-// }
-
+        throw error;
+    }
+}
 
 const githubClient = {
     searchReposByLanguage,
-    getPackageJson
+    getPackageJson,
+    getFileContents
 };
 export { RateLimitError, EndOfSeachError }
 export default githubClient

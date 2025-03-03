@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from "../prisma.js";
 
 //TODO: limit the number items in dependencyCache mode do dependency model
 const dependencyCache = {};

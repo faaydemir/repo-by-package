@@ -66,9 +66,10 @@ export type Database = {
           dependencyType: string | null
           id: number
           insertedAt: string
+          maxVersion: string | null
+          minVersion: string | null
           repoDependencyId: number
           version: string | null
-          versionOperator: string | null
           versionText: string
         }
         Insert: {
@@ -76,9 +77,10 @@ export type Database = {
           dependencyType?: string | null
           id?: number
           insertedAt?: string
+          maxVersion?: string | null
+          minVersion?: string | null
           repoDependencyId: number
           version?: string | null
-          versionOperator?: string | null
           versionText: string
         }
         Update: {
@@ -86,9 +88,10 @@ export type Database = {
           dependencyType?: string | null
           id?: number
           insertedAt?: string
+          maxVersion?: string | null
+          minVersion?: string | null
           repoDependencyId?: number
           version?: string | null
-          versionOperator?: string | null
           versionText?: string
         }
         Relationships: [
@@ -97,6 +100,13 @@ export type Database = {
             columns: ["dependencyId"]
             isOneToOne: false
             referencedRelation: "Dependency"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "DependencyMapping_dependencyId_fkey"
+            columns: ["dependencyId"]
+            isOneToOne: false
+            referencedRelation: "dependency_matview"
             referencedColumns: ["id"]
           },
           {
@@ -299,6 +309,17 @@ export type Database = {
       }
     }
     Views: {
+      dependency_matview: {
+        Row: {
+          id: number | null
+          name: string | null
+          priority: number | null
+          provider: string | null
+          repoCount: number | null
+          tags: string[] | null
+        }
+        Relationships: []
+      }
       dependency_view: {
         Row: {
           id: number | null
@@ -307,6 +328,14 @@ export type Database = {
           provider: string | null
           repoCount: number | null
           tags: string[] | null
+        }
+        Relationships: []
+      }
+      provider_stats: {
+        Row: {
+          dependencyCount: number | null
+          languageStats: Json | null
+          name: string | null
         }
         Relationships: []
       }
@@ -371,6 +400,14 @@ export type Database = {
         }
         Returns: number
       }
+      get_all_provider_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          name: string
+          dependencyCount: number
+          languageStats: Json
+        }[]
+      }
       get_packages_by_id: {
         Args: {
           p_packageids: number[]
@@ -382,6 +419,16 @@ export type Database = {
           repocount: number
           tags: string[]
           priority: number
+        }[]
+      }
+      get_provider_stats: {
+        Args: {
+          provider_name: string
+        }
+        Returns: {
+          name: string
+          dependencycount: number
+          languagestats: Json
         }[]
       }
       search_packages: {
@@ -401,35 +448,24 @@ export type Database = {
           priority: number
         }[]
       }
-      search_repositories: {
+      search_packages_v2: {
         Args: {
           p_packageids: number[]
-          p_sortfield: string
-          p_sortdirection: string
+          p_name: string
+          p_provider: string
           p_page?: number
           p_per_page?: number
         }
         Returns: {
-          defaultBranch: string | null
-          description: string | null
-          fullName: string | null
-          githubId: number | null
-          id: number | null
-          language: string | null
-          name: string | null
-          owner: string | null
-          packageIds: number[] | null
-          packageProvider: string | null
-          packages: Json | null
-          path: string | null
-          repositoryDependencyId: number | null
-          stars: number | null
-          topics: string | null
-          updatedAt: string | null
-          url: string | null
+          id: number
+          name: string
+          provider: string
+          repocount: number
+          tags: string[]
+          priority: number
         }[]
       }
-      search_repositories_matview: {
+      search_repositories: {
         Args: {
           p_packageids: number[]
           p_sortfield: string

@@ -45,3 +45,9 @@ export class Project {
         this.dependencies = dependencies;
     }
 }
+
+
+export const validateDependency = async (dependency) => {
+   //TODO: check if there is a dependency in provider 
+   
+}

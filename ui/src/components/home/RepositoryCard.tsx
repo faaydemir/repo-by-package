@@ -98,7 +98,7 @@ export function RepositoryCard({ repository, onPackageClick }: RepositoryCardPro
                 key={pkg.id}
                 onClick={() => onPackageClick?.(pkg)}
               >
-                <PackageTag key={pkg.id} name={pkg.name} size='sm' />
+                <PackageTag key={pkg.id} name={pkg.name} provider={pkg.provider} size='sm' />
               </button>
             ))}
             {project.packages.length > 10 && (

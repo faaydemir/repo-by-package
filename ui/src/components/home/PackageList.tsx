@@ -23,6 +23,7 @@ export function PackageList({ title, packages, onPackageSelect }: PackageListPro
           >
             <PackageTag
               name={pkg.name}
+              provider={pkg.provider}
               repoCount={pkg.repoCount}
               className="w-full justify-between"
             />

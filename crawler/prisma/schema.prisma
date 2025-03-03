@@ -1,14 +1,13 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Repo {
-  id                 Int              @id @default(autoincrement())
   githubId           BigInt?          @unique
   owner              String
   name               String
@@ -29,55 +28,55 @@ model Repo {
   updatedAt          DateTime?
   pushedAt           DateTime?
   insertedAt         DateTime         @default(now())
-  repoRependencies   RepoDependency[]
   packageProcessedAt DateTime?
   processible        Boolean          @default(true)
+  id                 Int              @id @default(autoincrement())
+  repoRependencies   RepoDependency[]
 }
 
 model RepoDependency {
-  id                 Int                @id @default(autoincrement())
-  repo               Repo               @relation(fields: [repoId], references: [id])
-  repoId             Int
   path               String?
   commitId           String?
-  insertedAt         DateTime           @default(now())
+  insertedAt         DateTime            @default(now())
   packageProvider    String?
+  id                 Int                 @id @default(autoincrement())
+  repoId             Int
   dependencyMappings DependencyMapping[]
+  repo               Repo                @relation(fields: [repoId], references: [id])
 
   @@unique([repoId, path])
 }
 
 model Dependency {
-  id       Int    @id @default(autoincrement())
-  name     String
-  provider String
-
+  name               String
+  provider           String
+  id                 Int                 @id @default(autoincrement())
   dependencyMappings DependencyMapping[]
 
   @@unique([name, provider])
 }
 
 model DependencyMapping {
-  id               Int           @id @default(autoincrement())
-  repoDependency   RepoDependency @relation(fields: [repoDependencyId], references: [id])
-  repoDependencyId Int
-  dependency       Dependency     @relation(fields: [dependencyId], references: [id])
-  dependencyId     Int
   version          String?
-  minVersion       String?
-  maxVersion       String?
-  versionText      String
-  dependencyType   String?
   insertedAt       DateTime       @default(now())
+  versionText      String?
+  dependencyType   String?
+  id               Int            @id @default(autoincrement())
+  dependencyId     Int
+  repoDependencyId Int
+  maxVersion       String?
+  minVersion       String?
+  dependency       Dependency     @relation(fields: [dependencyId], references: [id])
+  repoDependency   RepoDependency @relation(fields: [repoDependencyId], references: [id])
 
   @@unique([repoDependencyId, dependencyId])
 }
 
 model RepoCrawTaskRun {
-  id                  Int       @id @default(autoincrement())
   taskKey             String    @unique
-  maxStars            Int
   lastRunAt           DateTime?
   isBackwardCompleted Boolean   @default(false)
   error               String?
+  id                  Int       @id @default(autoincrement())
+  maxStars            Int
 }

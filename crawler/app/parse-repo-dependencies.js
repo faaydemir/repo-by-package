@@ -3,14 +3,15 @@ import Dependency from "./model/dependency.js";
 import Repo from "./model/repo.js";
 import DependencyMapping from "./model/dependency-mapping.js";
 import RepoDependency from "./model/repo-dependency.js";
-import { PrismaClient } from '@prisma/client';
-import { RepoDependencyList, UnprocessableRepoError } from "./repo-dependency-list.js";
+import { UnprocessableRepoError } from "./repo-dependency-list.js";
 import supportedLanguages from "./supported-languages.js";
-import { processTSJSDependencies } from "./js-ts-dependency-parser.js";
-import { REPO_REPROCESS_INTERVAL_DAYS } from "./constants.js";
-import { minVersion } from "semver";
+import { processTSJSDependencies } from "./depdendency-parser/js-ts-dependency-parser.js";
+import { processPythonDependencies } from "./depdendency-parser/python-dependency-parser.js";
+import { REPO_CRAWL_TASK_RUN_INTERVAL, REPO_REPROCESS_INTERVAL_DAYS } from "./constants.js";
+import sleep from "./sleep.js";
+import prisma from "./prisma.js";
 
-const prisma = new PrismaClient();
+
 const REPO_TAKE_COUNT = 10;
 
 const repoDependencyProcessorByLanguage = {}
@@ -90,8 +91,16 @@ const saveRepoDependencyList = async (repoDependencyList) => {
             packageProvider: project.packageProvider
         });
 
+        //filter duplicate dependencies
+        const uniqueDependencies = project.dependencies.filter((dep, index, self) =>
+            index === self.findIndex((t) => (
+                t.name === dep.name && t.provider === dep.provider
+            ))
+        );
+
         const depdendencyMappings = await Promise.all(
-            project.dependencies.map(async dep => {
+
+            uniqueDependencies.map(async dep => {
                 let dependency = await Dependency.getOrCreateCached(dep.name, dep.provider);
 
                 return new DependencyMapping({
@@ -105,21 +114,26 @@ const saveRepoDependencyList = async (repoDependencyList) => {
             })
         );
 
-        await prisma.$transaction(async (tx) => {
-            const { id } = await tx.repoDependency.create({
-                data: repoDependency
-            });
+        await prisma.$transaction(
+            async (tx) => {
+                const { id } = await tx.repoDependency.create({
+                    data: repoDependency
+                });
 
-            await Promise.all(depdendencyMappings.map(dm => tx.dependencyMapping.create({
-                data: {
-                    ...dm,
-                    repoDependencyId: id
+                for (const dm of depdendencyMappings) {
+                    dm.repoDependencyId = id;
                 }
-            })));
-            await Repo.update(repoDependencyList.id, {
-                packageProcessedAt: new Date()
-            });
-        },
+
+                await tx.dependencyMapping.createMany({
+                    data: depdendencyMappings, // Insert all at once
+                    skipDuplicates: true, // Avoid conflicts
+                });
+
+                await tx.repo.update({
+                    where: { id: repoDependencyList.id, },
+                    data: { packageProcessedAt: new Date() }
+                });
+            },
             { maxWait: 60000, timeout: 60000 }
         );
     }
@@ -135,7 +149,7 @@ const parseAndSaveDependencies = async (repo) => {
 
         await clearRepoDependencies(repo.id);
         await saveRepoDependencyList(repoDependencyList);
-    
+
     }
     catch (error) {
         console.error(error);
@@ -181,6 +195,7 @@ const reprocessRepos = async () => {
 const parseDependenciesTask = async () => {
     setLanguageRepoProcessor(supportedLanguages.JavaScript, processTSJSDependencies);
     setLanguageRepoProcessor(supportedLanguages.TypeScript, processTSJSDependencies);
+    setLanguageRepoProcessor(supportedLanguages.Python, processPythonDependencies);
 
     while (true) {
         try {

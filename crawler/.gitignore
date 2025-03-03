@@ -30,6 +30,7 @@ dist/
 build/
 out/
 migrations/
+test_files/
 
 main-test.js
 githup-api-test.http

@@ -10,15 +10,17 @@ import { Pagination as PaginationView } from '@/components/common/Pagination';
 import client, { Package, Pagination, Sort } from '@/client';
 import { useSearchParams } from 'next/navigation';
 import { defaultState, State } from './home.state';
-import { searchPackages, searchRepositories } from './home.actions';
+import { loadAppInfo, searchPackages, searchRepositories } from './home.actions';
 import useUpdateEffect from '@/utils/hooks/useUpdatedEfect';
 import Landing from './Landing';
+import { useRouter } from 'next/navigation';
 
+type Props = { providerId?: string }
 
-export default function Home() {
-  const [state, setState] = useState<State>(defaultState);
+export default function Home({ providerId }: Props) {
+  const [state, setState] = useState<State>({ ...defaultState, selectedProvider: providerId });
   const searchParams = useSearchParams();
-
+  const router = useRouter();
   const handleSearch = (query: string) => {
     if (!(query.trim().length > 1)) return;
     setState(prev => ({ ...prev, searchQuery: query }));
@@ -69,7 +71,14 @@ export default function Home() {
   };
   //TODO: add debounce and result checking
   const loadPackages = async () => {
-    await searchPackages({ query: state.searchQuery, usedWithPackages: state.selectedPackages.map(p => p.id) }, setState);
+    await searchPackages(
+      {
+        query: state.searchQuery,
+        usedWithPackages: state.selectedPackages.map(p => p.id),
+        provider: state.selectedProvider
+      },
+      setState
+    );
   };
 
   const handlePackageSelect = (pkg: Package) => {
@@ -95,6 +104,9 @@ export default function Home() {
     return "Most Used Packages";
   }
 
+  const handleProviderRemove = () => {
+    router.push('/');
+  };
 
   useUpdateEffect(() => {
     updateQueryParams();
@@ -107,12 +119,13 @@ export default function Home() {
 
   useEffect(() => {
     loadInitialState();
+    loadAppInfo(setState);
   }, []);
 
 
   return (
     <div className="m-8">
-      <div className="flex ">
+      <div className="flex">
         {/* Left Side */}
         <div className="w-80 border border-gray-300 min-h-[calc(100vh-8rem)]">
           <div className="flex flex-col sticky top-2 px-4 py-2 border-gray-300 h-[calc(100vh-4rem)]">
@@ -132,52 +145,58 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
-        <div className="flex-1 space-y-4 min-h-[calc(100vh-8rem)] border-r  border-t border-b border-gray-300">
-          { state.selectedPackages?.length> 0
 
-          
-          ? <div className="space-y-2 px-4 py-2">
+        <div className="flex-1 space-y-4 min-h-[calc(100vh-8rem)] border-r  border-t border-b border-gray-300">
+          <div className="space-y-2 px-4 py-2">
+            
             <div className="flex items-center flex-wrap justify-center min-h-14 bg-white border-b border-gray-300 -mx-4 px-4 -mt-2 py-2">
               <SelectedPackages
+                selectedProvider={state.selectedProvider}
                 packages={state.selectedPackages}
                 onRemove={handlePackageRemove}
+                onProviderRemove={() => handleProviderRemove()}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-600 font-semibold">
-                {state.totalRepoCount ?? 0} project found.
-              </div>
-              <div className="flex gap-2">
-                <SortButton
-                  label="Stars"
-                  type="stars"
-                  activeSort={state.repoSort}
-                  onClick={handleSort}
-                />
-                <SortButton
-                  label="Updated"
-                  type="updatedAt"
-                  activeSort={state.repoSort}
-                  onClick={handleSort}
-                />
-              </div>
-            </div>
 
-            <div className="space-y-5">
-              {state.repositories.map((repo, i) => (
-                <RepositoryCard key={i} repository={repo} onPackageClick={handlePackageSelect} />
-              ))}
-            </div>
+            {state.selectedPackages?.length > 0
+              ? <>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-600 font-semibold">
+                    {state.totalRepoCount ?? 0} project found.
+                  </div>
+                  <div className="flex gap-2">
+                    <SortButton
+                      label="Stars"
+                      type="stars"
+                      activeSort={state.repoSort}
+                      onClick={handleSort}
+                    />
+                    <SortButton
+                      label="Updated"
+                      type="updatedAt"
+                      activeSort={state.repoSort}
+                      onClick={handleSort}
+                    />
+                  </div>
+                </div>
 
-            <PaginationView
-              pagination={state.repoPagination}
-              total={state.totalRepoCount ?? 0}
-              onPaginationChange={handlePagination}
-            />
+                <div className="space-y-5">
+                  {state.repositories.map((repo, i) => (
+                    <RepositoryCard key={i} repository={repo} onPackageClick={handlePackageSelect} />
+                  ))}
+                </div>
+
+                <PaginationView
+                  pagination={state.repoPagination}
+                  total={state.totalRepoCount ?? 0}
+                  onPaginationChange={handlePagination}
+                />
+              </>
+              : <>
+                {!providerId && <Landing appInfo={state.appInfo} />}
+              </>
+            }
           </div>
-          :<Landing />
-          }
         </div>
       </div>
     </div>

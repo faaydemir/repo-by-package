@@ -75,6 +75,18 @@ export interface SearchPackageRequest {
     take?: number
 }
 
+export type LanguageStat = {
+    language: string;
+    projectCount: number;
+};
+
+export type ProviderStats = {
+    name: string;
+    dependencyCount: number;
+    languageStats: LanguageStat[];
+};
+
+
 interface RepositoryResponseItems {
     id: number
     githubId: number
@@ -191,7 +203,7 @@ const searchPackages = async (request: SearchPackageRequest): Promise<SearchPack
         throw new Error('Missing required fields')
     }
     const { data, error } = await supabase
-        .rpc('search_packages', {
+        .rpc('search_packages_v2', {
             p_name: request.query ?? '',
             p_packageids: request.usedWithPackages ?? [],
             p_page: 1,
@@ -215,6 +227,16 @@ const searchPackages = async (request: SearchPackageRequest): Promise<SearchPack
     }
 }
 
+const getProviderStats = async (): Promise<ProviderStats[]> => {
+    const { data, error } = await supabase.rpc('get_all_provider_stats', {})
+
+    if (error) {
+        alert(error.message)
+        throw new Error(error.message)
+    }
+    return data as ProviderStats[]
+}
+
 const generateSearchRepositoriesCacheKey = (request: RepositoryFilter): string => {
     const packageIds = [...request.packageIds ?? []]
     packageIds.sort()
@@ -231,10 +253,17 @@ const generateSearchPackagesCacheKey = (request: SearchPackageRequest): string =
     const usedWithPackages = [...request.usedWithPackages ?? []]
     usedWithPackages.sort()
     return `${request.query}-${usedWithPackages?.join(',')}-${request.provider}`
-
 }
 
+
 const client = {
+
+    getProviderStats:cache ({
+        keyGenerator: () => 'providerStats',
+        getter: getProviderStats,
+        count: 1
+    }),
+
     searchRepositories: cache({
         keyGenerator: generateSearchRepositoriesCacheKey,
         getter: searchRepositories,

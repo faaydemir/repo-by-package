@@ -1,5 +1,5 @@
-import githubClient from "./github-client.js";
-import { Project, RepoDependency, RepoDependencyList, UnprocessableRepoError } from "./repo-dependency-list.js";
+import githubClient from "../github-client.js";
+import { Project, RepoDependency, RepoDependencyList, UnprocessableRepoError } from "../repo-dependency-list.js";
 import semver from 'semver';
 
 /**
