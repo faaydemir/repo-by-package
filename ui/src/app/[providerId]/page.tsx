@@ -2,6 +2,7 @@
 import Home from '@/components/home/Home.page';
 import appInfo from '@/constant/appInfo';
 import React from 'react';
+import { Suspense } from 'react';
 
 export const generateStaticParams = async () => {
     return appInfo.supportedProviders.map(providerId => ({ providerId }));
@@ -16,6 +17,8 @@ export default async function ProviderId({
 }: Props) {
     const { providerId } = await params;
     return (
-        <Home providerId={providerId} />
+        <Suspense>
+            <Home providerId={providerId} />
+        </Suspense>
     );
 }

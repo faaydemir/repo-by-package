@@ -1,7 +1,7 @@
 'use client';
 
 import { Package } from '@/client';
-import { PackageTag, SelectedPackageTag } from '@/components/home/PackageTag';
+import { SelectedPackageTag } from '@/components/home/PackageTag';
 import { TechIcon } from '../common/TechIcon';
 
 interface SelectedPackagesProps {
