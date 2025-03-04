@@ -306,7 +306,7 @@ export const parsePyprojectContent = (content) => {
   }
 };
 
-export const processPythonDependencies = async (repo) => {
+export const parsePythonDependencies = async (repo) => {
   const dependencyList = new RepoDependencyList({ id: repo.id });
 
   // Get Python dependency files from GitHub

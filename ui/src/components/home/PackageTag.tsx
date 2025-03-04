@@ -87,6 +87,8 @@ const getPackageUrl = (provider: string, name: string) => {
     return `https://www.npmjs.com/package/${name}`;
   } else if (provider === 'pypi') {
     return `https://pypi.org/project/${name}`;
+  } else if (provider === 'nuget') {
+    return `https://www.nuget.org/packages/${name}`
   }
   return '';
 }
@@ -183,7 +185,7 @@ export function SelectedPackageTag({ name, repoCount, provider, onRemove, size =
         )}
       </div>
       {getPackageUrl(provider, name) &&
-        <a className="text-xs border-l border-gray-300 opacity-75 font-normal hover:opacity-100 px-1 ml-1 h-full" target="_blank" href={getPackageUrl(provider, name)} >
+        <a className="text-xs border-l border-gray-300 opacity-75 font-normal hover:opacity-100 px-1 ml-1.5 h-full" target="_blank" href={getPackageUrl(provider, name)} >
           {linkIcon}
         </a>
       }

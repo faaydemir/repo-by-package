@@ -73,7 +73,6 @@ class Repo {
                 id: {
                     gt: idCursor
                 },
-                processible: true,
                 packageProcessedAt: {
                     lt: minDate
                 }

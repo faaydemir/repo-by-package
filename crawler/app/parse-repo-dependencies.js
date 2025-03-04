@@ -5,8 +5,9 @@ import DependencyMapping from "./model/dependency-mapping.js";
 import RepoDependency from "./model/repo-dependency.js";
 import { UnprocessableRepoError } from "./repo-dependency-list.js";
 import supportedLanguages from "./supported-languages.js";
-import { processTSJSDependencies } from "./depdendency-parser/js-ts-dependency-parser.js";
-import { processPythonDependencies } from "./depdendency-parser/python-dependency-parser.js";
+import { parseTSJSDependencies } from "./depdendency-parser/js-ts-dependency-parser.js";
+import { parsePythonDependencies } from "./depdendency-parser/python-dependency-parser.js";
+import { parseCSharpDependencies } from "./depdendency-parser/csharp-dependency-parser.js";
 import { REPO_CRAWL_TASK_RUN_INTERVAL, REPO_REPROCESS_INTERVAL_DAYS } from "./constants.js";
 import sleep from "./sleep.js";
 import prisma from "./prisma.js";
@@ -193,9 +194,10 @@ const reprocessRepos = async () => {
 }
 
 const parseDependenciesTask = async () => {
-    setLanguageRepoProcessor(supportedLanguages.JavaScript, processTSJSDependencies);
-    setLanguageRepoProcessor(supportedLanguages.TypeScript, processTSJSDependencies);
-    setLanguageRepoProcessor(supportedLanguages.Python, processPythonDependencies);
+    setLanguageRepoProcessor(supportedLanguages.JavaScript, parseTSJSDependencies);
+    setLanguageRepoProcessor(supportedLanguages.TypeScript, parseTSJSDependencies);
+    setLanguageRepoProcessor(supportedLanguages.Python, parsePythonDependencies);
+    setLanguageRepoProcessor(supportedLanguages.CSharp, parseCSharpDependencies);
 
     while (true) {
         try {

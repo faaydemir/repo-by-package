@@ -1,7 +1,9 @@
 import React from 'react';
 
-const SUPPORTED_TECHNOLOGIES = ['javascript', 'typescript', 'python', 'pypi', 'npm'] as const;
+const SUPPORTED_TECHNOLOGIES = ['javascript', 'typescript', 'python', 'c#', 'nuget', 'pypi', 'npm'] as const;
 type SupportedTechnology = typeof SUPPORTED_TECHNOLOGIES[number];
+
+
 
 type IconSize = 'xs' | 'sm' | 'md' | 'lg';
 
@@ -25,8 +27,10 @@ const getSizeClass = (size: IconSize): string => {
 };
 
 const getIconPath = (tech: string): string => {
-  const normalizedLang = tech.toLowerCase();
+  let normalizedLang = tech.toLowerCase();
   if (SUPPORTED_TECHNOLOGIES.includes(normalizedLang as SupportedTechnology)) {
+    if (normalizedLang == 'c#')
+      normalizedLang = 'csharp'
     return `/repo-by-package/${normalizedLang}.svg`;
   }
   return '';

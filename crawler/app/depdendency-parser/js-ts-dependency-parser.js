@@ -126,7 +126,7 @@ export const parseDependenciesFromPackageJson = (packageJson) => {
  * @param {*} repo 
  * @returns {Promise<RepoDependencyList>}
  */
-export const processTSJSDependencies = async (repo) => {
+export const parseTSJSDependencies = async (repo) => {
     const packageJsons = await githubClient.getPackageJson(repo.owner, repo.name);
     
     if (!packageJsons) {

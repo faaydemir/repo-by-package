@@ -5,7 +5,7 @@ const appInfo = {
     description: "Browse github repositories by packages",
     icon: "/repo-by-package/favicon.svg",
     favicon: "/repo-by-package/favicon.png",
-    supportedProviders: ['npm','pypi']
+    supportedProviders: ['npm', 'pypi', 'nuget']
 }
 
 export default appInfo;

@@ -1,4 +1,4 @@
-import { parseVersionText, parseDependenciesFromPackageJson, processTSJSDependencies } from '../app/js-ts-dependency-parser.js';
+import { parseVersionText, parseDependenciesFromPackageJson, parseTSJSDependencies } from '../app/js-ts-dependency-parser.js';
 import { RepoDependencyList } from '../app/repo-dependency-list.js';
 import githubClient from '../app/github-client.js';
 import {jest} from '@jest/globals'
@@ -128,7 +128,7 @@ describe('js-ts-dependency-parser', () => {
     });
   });
 
-  describe('processTSJSDependencies', () => {
+  describe('parseTSJSDependencies', () => {
     beforeEach(() => {
       jest.clearAllMocks();
     });
@@ -152,7 +152,7 @@ describe('js-ts-dependency-parser', () => {
 
       githubClient.getPackageJson.mockResolvedValue(mockPackageJsons);
 
-      const result = await processTSJSDependencies(mockRepo);
+      const result = await parseTSJSDependencies(mockRepo);
 
       expect(result).toBeInstanceOf(RepoDependencyList);
       expect(result.id).toBe(mockRepo.id);
@@ -177,7 +177,7 @@ describe('js-ts-dependency-parser', () => {
 
       githubClient.getPackageJson.mockResolvedValue(mockPackageJsons);
 
-      const result = await processTSJSDependencies(mockRepo);
+      const result = await parseTSJSDependencies(mockRepo);
       
       expect(result.projects).toHaveLength(0);
     });
@@ -191,7 +191,7 @@ describe('js-ts-dependency-parser', () => {
 
       githubClient.getPackageJson.mockResolvedValue([]);
 
-      const result = await processTSJSDependencies(mockRepo);
+      const result = await parseTSJSDependencies(mockRepo);
       
       expect(result).toBeUndefined();
     });

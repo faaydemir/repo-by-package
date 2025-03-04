@@ -41,22 +41,21 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
             <div className="container mx-auto px-4 md:px-6 pb-24 max-w-7xl ">
 
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     {appInfo.providerStats.map((provider, index) => (
                         <Link href={`/${provider.name}`}
                             key={index}
                             className="rounded-md p-6 border border-gray-300 hover:border-gray-500 cursor-pointer transition-all duration-300 group flex flex-col h-full">
-                            <div className="flex flex-col gap-6 flex-1 h-full">
+                            <div className="flex flex-col gap-3 flex-1 h-full">
                                 {/* Provider Header */}
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-gradient-to-br p-4 rounded-md shadow-sm transition-transform duration-300 ring-2 ring-indigo-100/50">
-                                            <TechIcon tech={provider.name} size='lg' />
-                                        </div>
+                                    <div className="flex items-center gap-3 border-b border-gray-300 w-full pb-3">
+                                        <TechIcon tech={provider.name} size='md' />
+
                                         <div>
-                                            <h3 className="text-2xl font-bold text-gray-800 mb-1">{provider.name}</h3>
-                                            <div className="flex items-baseline">
-                                                <span className="text-2xl font-bold text-gray-600 mr-2">
+                                            <h3 className="text-2xl font-bold text-gray-700 mb-1">{provider.name}</h3>
+                                            <div className="flex flex-col flex-wrap items-baseline">
+                                                <span className="text-2xl font-bold text-gray-600">
                                                     {provider.dependencyCount.toLocaleString()}
                                                 </span>
                                                 <span className="text-gray-500 font-medium text-sm">packages</span>
@@ -70,12 +69,12 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
                                     {provider.languageStats.map((languageStat, langIndex) => (
                                         <div
                                             key={langIndex}
-                                            className="px-0 py-1.5 w-full rounded-sm text-gray-600 transition-all text-sm font-medium flex items-center gap-2 ">
+                                            className="px-0 py-1.5 w-full rounded-sm text-gray-600 transition-all text-sm font-medium flex items-start gap-2 ">
 
 
-                                            <TechIcon tech={languageStat.language} size="md" />
+                                            <TechIcon tech={languageStat.language} size="sm" />
                                             <div>
-                                                <h5 className="font-semibold text-gray-600 text-lg  transition-colors">{languageStat.language}</h5>
+                                                <h5 className="font-semibold text-gray-600 text-md  transition-colors">{languageStat.language}</h5>
                                                 <div className="flex items-baseline">
                                                     <span className="font-bold mr-1">
                                                         {languageStat.projectCount.toLocaleString()}
@@ -87,9 +86,9 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
                                     ))}
                                 </div>
 
-                                <div className="mt-auto pt-4">
+                                <div className="mt-auto">
                                     {/* Improved Explore Button - border only shows on parent hover */}
-                                    <span className="px-6 py-3 border   group-hover:text-gray-600 border-transparent w-full rounded-sm text-gray-400 transition-all text-sm font-medium flex justify-center items-center">
+                                    <span className="px-6 py-3 border   group-hover:text-gray-600 border-transparent w-full rounded-sm text-gray-400 transition-all text-xs font-medium flex justify-center items-center">
                                         Browse {provider.name} packages
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

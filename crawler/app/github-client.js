@@ -17,9 +17,7 @@ const github = axios.create({
 });
 
 //TODO: add repo properties
-class Repo {
 
-}
 class RateLimit {
     /**
      * 
@@ -170,13 +168,13 @@ async function getPackageJson(owner, repo) {
     }
 }
 /**
- * Fetch and parse the package.json file from a repository.
+ * Fetch files with specific name patterns from a repository
  * @param {string} owner - Repository owner.
  * @param {string} repo - Repository name.
- * @param {string[]} filenames - File name to search for.
- * @returns {Promise<{path: string, content: Object}[]>} - An array of package.json files and their content.
+ * @param {string[]} filePatterns - File name patterns to search for.
+ * @returns {Promise<{path: string, content: string}[]>} - An array of files and their content.
  */
-async function getFileContents(owner, repo, filenames) {
+async function getFileContents(owner, repo, filePatterns) {
     try {
         // First, fetch repository details to get the default branch (e.g., 'main' or 'master')
         const repoRes = await github.get(`/repos/${owner}/${repo}`);
@@ -186,25 +184,38 @@ async function getFileContents(owner, repo, filenames) {
         const treeRes = await github.get(`/repos/${owner}/${repo}/git/trees/${defaultBranch}?recursive=1`);
         const tree = treeRes.data.tree;
 
-        // Filter the tree for the specified filenames (ensure we only consider blobs, i.e. actual files)
-        const filePaths = tree.filter(item => item.type === 'blob' && filenames.includes(item.path.toLowerCase()));
+        const matchingFiles = [];
+        
+        for (const item of tree) {
+            if (item.type !== 'blob') continue;
+            
+            for (const pattern of filePatterns) {
+                if (!pattern.includes('*')) {
+                    if (item.path.toLowerCase() === pattern.toLowerCase()) {
+                        matchingFiles.push(item);
+                    }
+                    continue;
+                }
 
-        // For each specified file found, fetch its content using the contents API
+                if (pattern.startsWith('*.')) {
+                    const extension = pattern.substring(1); // Get ".csproj"
+                    if (item.path.toLowerCase().endsWith(extension.toLowerCase())) {
+                        matchingFiles.push(item);
+                    }
+                    continue;
+                }
+            }
+        }
+
         const files = await Promise.all(
-            filePaths.map(async (file) => {
-                try {
+            matchingFiles.map(async (file) => {
                     const fileRes = await github.get(`/repos/${owner}/${repo}/contents/${file.path}`);
                     const { content, encoding } = fileRes.data;
                     if (encoding === 'base64') {
-                        const fileStr = Buffer.from(content, 'base64').toString('utf8');
-                        const fileContent = fileStr;
+                        const fileContent = Buffer.from(content, 'base64').toString('utf8');
                         return { path: file.path, content: fileContent };
                     }
                     return null;
-                } catch (error) {
-                    console.error(`Error fetching ${file.path} in ${owner}/${repo}: ${error.message}`);
-                    return null;
-                }
             })
         );
 
