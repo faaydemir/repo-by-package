@@ -3,7 +3,7 @@ Repo by Package is a web application for searching public GitHub repositories by
 
 Visit
 
-[faaydemir.github.io/repo-by-package](https://github.com/faaydemir/repo-by-package/tree/main#:~:text=faaydemir.github.io/repo%2Dby%2Dpackage)
+[faaydemir.github.io/repo-by-package](https://faaydemir.github.io/repo-by-package)
 
 
 ## Use Cases
