@@ -158,23 +158,25 @@ export function SelectedPackageTag({ name, repoCount, provider, onRemove, size =
         'bg-opacity-100 hover:bg-opacity-100',
         'border',
         'py-0',
-        'relative pl-7 pr-0',
+        'pr-0',
         sizeClasses[size],
         className
       )}
       style={{ backgroundColor: color + '10' || '#94a3b8' }}
     >
-      <div className='group cursor-pointer' onClick={onRemove}>
-        <div
-          className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full transition-all duration-200 group-hover:opacity-0"
-          style={{ backgroundColor: color || '#94a3b8' }}
-        />
+      <div className='flex flex-row items-center justify-center group cursor-pointer pr-1 pl-2 py-0 gap-2' onClick={onRemove}>
+        <div className='relative  w-2.5'>
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full transition-all duration-200 group-hover:opacity-0"
+            style={{ backgroundColor: color || '#94a3b8' }}
+          />
 
-        <span
-          className="text-lg opacity-0 absolute left-2 top-1/2 -translate-y-1/2  transition-all duration-200 group-hover:opacity-100 "
-        >
-          ×
-        </span>
+          <span
+            className="text-lg opacity-0 absolute top-1/2 -translate-y-1/2  transition-all duration-200 group-hover:opacity-100 "
+          >
+            ×
+          </span>
+        </div>
         <span className="tracking-tight truncate ">{name}</span>
         {repoCount !== undefined && (
           <span
@@ -185,7 +187,7 @@ export function SelectedPackageTag({ name, repoCount, provider, onRemove, size =
         )}
       </div>
       {getPackageUrl(provider, name) &&
-        <a className="text-xs border-l border-gray-300 opacity-75 font-normal hover:opacity-100 px-1 ml-1.5 h-full" target="_blank" href={getPackageUrl(provider, name)} >
+        <a className="text-xs border-l border-gray-300 opacity-60 font-normal hover:opacity-100 px-1 h-full" target="_blank" href={getPackageUrl(provider, name)} >
           {linkIcon}
         </a>
       }

@@ -16,13 +16,13 @@ interface TechIconProps {
 const getSizeClass = (size: IconSize): string => {
   switch (size) {
     case 'xs':
-      return 'w-5 h-5';
+      return 'w-5';
     case 'sm':
-      return 'w-7 h-7';
+      return 'w-7';
     case 'lg':
-      return 'w-16 h-16';
+      return 'w-16';
     default:
-      return 'w-11 h-11';
+      return 'w-11';
   }
 };
 
@@ -49,15 +49,15 @@ export const TechIcon: React.FC<TechIconProps> = ({
   }
 
   return (
-    <div className="inline-flex items-center gap-2 rounded-sm ">
+    <div className="inline-flex items-center gap-2 rounded-sm">
       <img
         src={iconPath}
         alt={`${tech} icon`}
-        className={`inline-block ${sizeClass}`}
+        className={`inline-block object-cover ${sizeClass}`}
       />
       {showText && (
-        <span className="text-sm font-medium">
-          {tech}
+        <span className="text-sm font-medium display-none md:inline hidden">
+                  {tech}
         </span>
       )}
     </div>
