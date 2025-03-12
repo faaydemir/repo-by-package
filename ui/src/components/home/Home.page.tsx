@@ -218,7 +218,7 @@ export default function Home({ providerId }: Props) {
         <div
           className={`${showPackageBar ? "block" : "hidden md:block"} mb-4 w-full border-gray-300 md:mb-0 md:min-h-[calc(100vh-8rem)] md:w-80 md:border`}
         >
-          <div className="absolute top-2 z-50 flex max-h-[100vh] w-full flex-col border-gray-300 bg-white px-4 py-2 md:sticky md:h-[calc(100vh-4rem)] md:max-h-none">
+          <div className="absolute z-50 flex max-h-[100vh] w-full flex-col border-gray-300 bg-white px-4 py-2 md:sticky md:h-[calc(100vh-4rem)] md:max-h-none">
             <div className="-mx-4 -mt-2 flex h-14 items-center justify-center border-b border-gray-300 bg-white px-4 py-2">
               <SearchBar onSearch={handleSearch} />
             </div>
@@ -232,7 +232,7 @@ export default function Home({ providerId }: Props) {
           </div>
         </div>
 
-        <div className="min-h-[calc(100vh-12rem)] flex-1 space-y-4 border border-gray-300 md:ml-4 md:min-h-[calc(100vh-8rem)]">
+        <div className="min-h-[calc(100vh-12rem)] flex-1 space-y-4 border-gray-300 md:min-h-[calc(100vh-8rem)] md:border-b md:border-r md:border-t">
           <div className="space-y-2 px-2 py-2 md:px-4 md:pt-2">
             <div
               className={`${state.selectedPackages.length > 0 ? "flex" : "hidden"} -mx-2 -mt-2 min-h-14 flex-wrap items-center justify-center border-b border-gray-300 bg-white px-2 py-2 md:-mx-4 md:flex md:px-4`}
