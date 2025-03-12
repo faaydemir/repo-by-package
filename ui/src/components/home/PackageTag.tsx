@@ -195,7 +195,7 @@ export function SelectedPackageTag({
       style={{ backgroundColor: color + "10" || "#94a3b8" }}
     >
       <div
-        className="group flex cursor-pointer flex-row items-center justify-center gap-2 py-0 pl-2 pr-1"
+        className="group flex cursor-pointer flex-row items-center justify-center gap-2 py-0 pl-2 pr-2"
         onClick={onRemove}
       >
         <div className="relative w-2.5">
@@ -221,7 +221,7 @@ export function SelectedPackageTag({
           target="_blank"
           href={getPackageUrl(provider, name)}
         >
-          <OpenPageIcon />
+          <OpenPageIcon size={5} />
         </a>
       )}
     </div>

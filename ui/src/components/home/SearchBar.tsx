@@ -24,7 +24,7 @@ export function SearchBar({ onSearch }: SearchBarProps) {
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search packages..."
-          className="w-full rounded-sm border-0 py-2 pl-10 pr-4 text-sm text-gray-900 ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-300"
+          className="text-md w-full rounded-sm border-0 py-2 pl-10 pr-4 text-gray-900 ring-1 ring-inset ring-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-300 md:text-sm"
         />
       </div>
     </div>

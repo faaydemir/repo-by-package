@@ -28,13 +28,16 @@ export default function Home({ providerId }: Props) {
     ...defaultState,
     selectedProvider: providerId,
   });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [packageBarOpen, setSidebarOpen] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768; //TODO use hook
+  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
-  const handleSearch = debounce((query: string) => {
-    setState((prev) => ({ ...prev, searchQuery: query }));
-  }, 200);
+  const handleSearch = debounce(
+    (query: string) => setState((prev) => ({ ...prev, searchQuery: query })),
+    200,
+  );
 
   const updateQueryParams = () => {
     const params = new URLSearchParams();
@@ -93,30 +96,6 @@ export default function Home({ providerId }: Props) {
     }));
   };
 
-  //TODO: add debounce and result checking
-  const loadRepositories = async () => {
-    if (state.selectedPackages.length === 0) return;
-    await searchRepositories(
-      {
-        packageIds: state.selectedPackages.map((p) => p.id),
-        sort: state.repoSort,
-        pagination: state.repoPagination,
-      },
-      setState,
-    );
-  };
-  //TODO: add debounce and result checking
-  const loadPackages = async () => {
-    await searchPackages(
-      {
-        query: state.searchQuery,
-        usedWithPackages: state.selectedPackages.map((p) => p.id),
-        provider: state.selectedProvider,
-      },
-      setState,
-    );
-  };
-
   const handlePackageSelect = (pkg: Package) => {
     if (state.selectedPackages.some((p) => p.id === pkg.id)) return;
     setState((prev) => ({
@@ -126,10 +105,7 @@ export default function Home({ providerId }: Props) {
       searchQuery: undefined,
     }));
 
-    // On mobile, close the sidebar after selecting a package
-    if (window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
+    if (isMobile) setSidebarOpen(false);
   };
 
   const handlePackageRemove = (pkg: Package) => {
@@ -152,6 +128,29 @@ export default function Home({ providerId }: Props) {
     setState((prev) => ({ ...prev, repoPagination: pagination }));
   };
 
+  const loadRepositories = async () => {
+    if (state.selectedPackages.length === 0) return;
+    await searchRepositories(
+      {
+        packageIds: state.selectedPackages.map((p) => p.id),
+        sort: state.repoSort,
+        pagination: state.repoPagination,
+      },
+      setState,
+    );
+  };
+
+  const loadPackages = async () => {
+    await searchPackages(
+      {
+        query: state.searchQuery,
+        usedWithPackages: state.selectedPackages.map((p) => p.id),
+        provider: state.selectedProvider,
+      },
+      setState,
+    );
+  };
+
   const getPackageListTitle = () => {
     if (state.searchQuery) return `Search Results for "${state.searchQuery}"`;
     if (state.selectedPackages.length > 0) return "Related Packages";
@@ -159,19 +158,12 @@ export default function Home({ providerId }: Props) {
   };
 
   const showPackageBar =
-    // on side bar opened
-    sidebarOpen ||
-    // on search
+    packageBarOpen ||
     state.searchQuery ||
-    // on package list empty and if provider is selected
     (state.selectedPackages.length == 0 && state.selectedProvider);
 
   const handleProviderRemove = () => {
     router.push("/");
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen((prev) => !prev);
   };
 
   useUpdateEffect(() => {
@@ -186,21 +178,6 @@ export default function Home({ providerId }: Props) {
   useEffect(() => {
     loadInitialState();
     loadAppInfo(setState);
-
-    // Set sidebar closed by default on mobile
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
-
-    // Handle window resize to adapt sidebar state
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setSidebarOpen(true);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -210,7 +187,7 @@ export default function Home({ providerId }: Props) {
           onClick={toggleSidebar}
           className="flex h-full w-full items-center justify-center rounded-sm border text-black"
         >
-          {sidebarOpen ? <BackIcon /> : <SeachMenuIcon />}
+          {packageBarOpen ? <BackIcon /> : <SeachMenuIcon />}
         </button>
       </div>
 
@@ -218,11 +195,11 @@ export default function Home({ providerId }: Props) {
         <div
           className={`${showPackageBar ? "block" : "hidden md:block"} mb-4 w-full border-gray-300 md:mb-0 md:min-h-[calc(100vh-8rem)] md:w-80 md:border`}
         >
-          <div className="absolute z-50 flex max-h-[100vh] w-full flex-col border-gray-300 bg-white px-4 py-2 md:sticky md:h-[calc(100vh-4rem)] md:max-h-none">
+          <div className="absolute z-50 flex max-h-[100vh] w-full flex-col border-gray-300 bg-white px-4 py-2 md:sticky md:top-0 md:h-[calc(100vh-4rem)] md:max-h-none">
             <div className="-mx-4 -mt-2 flex h-14 items-center justify-center border-b border-gray-300 bg-white px-4 py-2">
               <SearchBar onSearch={handleSearch} />
             </div>
-            <div className="flex-1 overflow-y-auto py-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500 [&::-webkit-scrollbar-track]:bg-gray-100 dark:[&::-webkit-scrollbar-track]:bg-neutral-700 [&::-webkit-scrollbar]:w-2">
+            <div className="-mx-4 flex-1 overflow-y-auto pl-4 pr-3 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500 [&::-webkit-scrollbar-track]:bg-gray-100 dark:[&::-webkit-scrollbar-track]:bg-neutral-700 [&::-webkit-scrollbar]:w-1">
               <PackageList
                 title={getPackageListTitle()}
                 packages={state.packages}
