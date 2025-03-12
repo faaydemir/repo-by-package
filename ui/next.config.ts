@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export", 
+  output: "export",
   reactStrictMode: true,
-  basePath:"/repo-by-package",
+  basePath: "/repo-by-package",
 };
 
 export default nextConfig;

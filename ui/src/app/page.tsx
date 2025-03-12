@@ -1,5 +1,5 @@
-import Home from '@/components/home/Home.page';
-import { Suspense } from 'react';
+import Home from "@/components/home/Home.page";
+import { Suspense } from "react";
 
 export default function Page() {
   return (

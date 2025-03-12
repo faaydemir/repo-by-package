@@ -5,9 +5,9 @@ import Header from "@/components/layout/Header";
 import appInfo from "@/constant/appInfo";
 
 const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -25,9 +25,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-gray-50 font-sans antialiased">
         <Header />
-        <main className="max-w-7xl mx-auto">
-          {children}
-        </main>
+        <main className="mx-auto max-w-7xl">{children}</main>
       </body>
     </html>
   );
