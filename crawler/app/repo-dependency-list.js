@@ -1,53 +1,37 @@
 export class UnprocessableRepoError extends Error {
-    constructor(message) {
-        super(message);
-    }
+	constructor(message) {
+		super(message);
+	}
 }
 
 export class RepoDependencyList {
-    constructor({
-        id,
-    }) {
-        this.id = id;
-        /**  @type {Project[]} */
-        this.projects = [];
-    }
+	constructor({ id }) {
+		this.id = id;
+		/**  @type {Project[]} */
+		this.projects = [];
+	}
 }
 export class RepoDependency {
-    constructor({
-        name,
-        provider,
-        version,
-        minVersion,
-        maxVersion,
-        versionText,
-    }) {
-        this.provider = provider;
-        this.name = name;
-        this.version = version;
-        this.minVersion = minVersion;
-        this.maxVersion = maxVersion;
-        this.versionText = versionText;
-    }
+	constructor({ name, provider, version, minVersion, maxVersion, versionText }) {
+		this.provider = provider;
+		this.name = name;
+		this.version = version;
+		this.minVersion = minVersion;
+		this.maxVersion = maxVersion;
+		this.versionText = versionText;
+	}
 }
 
 export class Project {
-    constructor({
-        path,
-        commitId,
-        packageProvider,
-        dependencies
-    }) {
-        this.path = path;
-        this.commitId = commitId;
-        this.packageProvider = packageProvider
-        /**@type {RepoDependency[]} */
-        this.dependencies = dependencies;
-    }
+	constructor({ path, commitId, packageProvider, dependencies }) {
+		this.path = path;
+		this.commitId = commitId;
+		this.packageProvider = packageProvider;
+		/**@type {RepoDependency[]} */
+		this.dependencies = dependencies;
+	}
 }
-
 
 export const validateDependency = async (dependency) => {
-   //TODO: check if there is a dependency in provider 
-   
-}
+	//TODO: check if there is a dependency in provider
+};

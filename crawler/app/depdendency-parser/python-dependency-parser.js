@@ -1,6 +1,6 @@
 //TODO: version parsing not working correctly
-import githubClient from "../github-client.js";
-import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from "../repo-dependency-list.js";
+import githubClient from '../github-client.js';
+import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from '../repo-dependency-list.js';
 import semver from 'semver';
 import * as itoml from '@iarna/toml';
 
@@ -10,134 +10,137 @@ import * as itoml from '@iarna/toml';
  * @returns {Object} Parsed version constraints
  */
 const parseDependencyVersionTextRequirementTxt = (versionText) => {
-  if (!versionText) return { version: '', minVersion: null, maxVersion: null };
+	if (!versionText) return { version: '', minVersion: null, maxVersion: null };
 
-  let minVersion = null;
-  let maxVersion = null;
-  const constraints = versionText.split(',').map(c => c.trim());
+	let minVersion = null;
+	let maxVersion = null;
+	const constraints = versionText.split(',').map((c) => c.trim());
 
-  for (const constraint of constraints) {
-    const match = constraint.match(/^(~=|==|!=|<=?|>=?|===?)?\s*([\w.-]+)/);
-    if (!match) continue;
+	for (const constraint of constraints) {
+		const match = constraint.match(/^(~=|==|!=|<=?|>=?|===?)?\s*([\w.-]+)/);
+		if (!match) continue;
 
-    const [, operator, version] = match;
-    const normalizedVersion = version.replace(/(\.\d+)\.?$/g, '$1');
+		const [, operator, version] = match;
+		const normalizedVersion = version.replace(/(\.\d+)\.?$/g, '$1');
 
-    // Handle different operators
-    switch (operator) {
-      case '==':
-        minVersion = maxVersion = normalizedVersion;
-        break; // Exact match overrides other constraints
-      case '>=':
-        minVersion = maxVersionCompare(minVersion, normalizedVersion, 'max');
-        break;
-      case '>':
-        minVersion = maxVersionCompare(minVersion, bumpVersion(normalizedVersion), 'max');
-        break;
-      case '<=':
-        maxVersion = maxVersionCompare(maxVersion, normalizedVersion, 'min');
-        break;
-      case '<':
-        maxVersion = maxVersionCompare(maxVersion, normalizedVersion, 'min');
-        break;
-      case '~=': {
-        const [baseVersion, upperVersion] = getCompatibleBounds(normalizedVersion);
-        minVersion = maxVersionCompare(minVersion, baseVersion, 'max');
-        maxVersion = maxVersionCompare(maxVersion, upperVersion, 'min');
-        break;
-      }
-      default:
-        if (!operator) minVersion = maxVersion = normalizedVersion;
-    }
-  }
+		// Handle different operators
+		switch (operator) {
+			case '==':
+				minVersion = maxVersion = normalizedVersion;
+				break; // Exact match overrides other constraints
+			case '>=':
+				minVersion = maxVersionCompare(minVersion, normalizedVersion, 'max');
+				break;
+			case '>':
+				minVersion = maxVersionCompare(minVersion, bumpVersion(normalizedVersion), 'max');
+				break;
+			case '<=':
+				maxVersion = maxVersionCompare(maxVersion, normalizedVersion, 'min');
+				break;
+			case '<':
+				maxVersion = maxVersionCompare(maxVersion, normalizedVersion, 'min');
+				break;
+			case '~=': {
+				const [baseVersion, upperVersion] = getCompatibleBounds(normalizedVersion);
+				minVersion = maxVersionCompare(minVersion, baseVersion, 'max');
+				maxVersion = maxVersionCompare(maxVersion, upperVersion, 'min');
+				break;
+			}
+			default:
+				if (!operator) minVersion = maxVersion = normalizedVersion;
+		}
+	}
 
-  return {
-    version: minVersion,
-    minVersion,
-    maxVersion
-  };
+	return {
+		version: minVersion,
+		minVersion,
+		maxVersion,
+	};
 };
 
 // Helper to compare version constraints
 const maxVersionCompare = (current, candidate, mode) => {
-  if (!current) return candidate;
-  const comparison = compareVersions(candidate, current);
-  return mode === 'max'
-    ? (comparison > 0 ? candidate : current)
-    : (comparison < 0 ? candidate : current);
+	if (!current) return candidate;
+	const comparison = compareVersions(candidate, current);
+	return mode === 'max' ? (comparison > 0 ? candidate : current) : comparison < 0 ? candidate : current;
 };
 
 // Simple PEP 440 version comparison (simplified)
 const compareVersions = (a, b) => {
-  const parse = v => v.split('.').map(part => {
-    const num = parseInt(part, 10);
-    return isNaN(num) ? part : num;
-  });
+	const parse = (v) =>
+		v.split('.').map((part) => {
+			const num = parseInt(part, 10);
+			return isNaN(num) ? part : num;
+		});
 
-  const aParts = parse(a);
-  const bParts = parse(b);
+	const aParts = parse(a);
+	const bParts = parse(b);
 
-  for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-    const aVal = aParts[i] || 0;
-    const bVal = bParts[i] || 0;
-    if (aVal > bVal) return 1;
-    if (aVal < bVal) return -1;
-  }
-  return 0;
+	for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+		const aVal = aParts[i] || 0;
+		const bVal = bParts[i] || 0;
+		if (aVal > bVal) return 1;
+		if (aVal < bVal) return -1;
+	}
+	return 0;
 };
 
 // Handle ~= compatible releases
 const getCompatibleBounds = (version) => {
-  const parts = version.split('.').map(p => parseInt(p, 10));
-  if (parts.length < 2) return [version, `${Number(version) + 1}.0`];
+	const parts = version.split('.').map((p) => parseInt(p, 10));
+	if (parts.length < 2) return [version, `${Number(version) + 1}.0`];
 
-  const base = parts.slice(0, -1).join('.');
-  const upper = `${base}.${parts[parts.length - 1] + 1}`;
-  return [version, upper];
+	const base = parts.slice(0, -1).join('.');
+	const upper = `${base}.${parts[parts.length - 1] + 1}`;
+	return [version, upper];
 };
 
 // Simple version bumper for > operator
 const bumpVersion = (version) => {
-  const parts = version.split('.');
-  const last = parts.length - 1;
-  parts[last] = (parseInt(parts[last], 10) || 0) + 1;
-  return parts.join('.');
+	const parts = version.split('.');
+	const last = parts.length - 1;
+	parts[last] = (parseInt(parts[last], 10) || 0) + 1;
+	return parts.join('.');
 };
 
 // Updated requirements.txt parser
 export const parseRequirementsContent = (content) => {
-  const lines = content.split('\n');
-  const dependencies = [];
+	const lines = content.split('\n');
+	const dependencies = [];
 
-  for (const line of lines) {
-    const trimmedLine = line.split('#')[0].trim();
+	for (const line of lines) {
+		const trimmedLine = line.split('#')[0].trim();
 
-    if (!trimmedLine ||
-      trimmedLine.startsWith('-r') ||
-      trimmedLine.startsWith('--requirement') ||
-      trimmedLine.startsWith('-e') ||
-      trimmedLine.startsWith('--editable')) {
-      continue;
-    }
+		if (
+			!trimmedLine ||
+			trimmedLine.startsWith('-r') ||
+			trimmedLine.startsWith('--requirement') ||
+			trimmedLine.startsWith('-e') ||
+			trimmedLine.startsWith('--editable')
+		) {
+			continue;
+		}
 
-    const [pkgPart] = trimmedLine.split(';');
-    const match = pkgPart.match(/^([a-zA-Z0-9_-]+(?:\[[^\]]+\])?)\s*([^\s]*)/);
-    if (!match) continue;
+		const [pkgPart] = trimmedLine.split(';');
+		const match = pkgPart.match(/^([a-zA-Z0-9_-]+(?:\[[^\]]+\])?)\s*([^\s]*)/);
+		if (!match) continue;
 
-    const [, name, versionSpec] = match;
-    const parsed = parseDependencyVersionTextRequirementTxt(versionSpec);
+		const [, name, versionSpec] = match;
+		const parsed = parseDependencyVersionTextRequirementTxt(versionSpec);
 
-    dependencies.push(new RepoDependency({
-      name: name.trim(),
-      provider: 'pypi',
-      versionText: versionSpec.trim(),
-      version: parsed.version,
-      minVersion: parsed.minVersion,
-      maxVersion: parsed.maxVersion
-    }));
-  }
+		dependencies.push(
+			new RepoDependency({
+				name: name.trim(),
+				provider: 'pypi',
+				versionText: versionSpec.trim(),
+				version: parsed.version,
+				minVersion: parsed.minVersion,
+				maxVersion: parsed.maxVersion,
+			}),
+		);
+	}
 
-  return dependencies;
+	return dependencies;
 };
 
 /**
@@ -148,39 +151,43 @@ export const parseRequirementsContent = (content) => {
  * @returns {{ name: string | null, versionText: string | null, version: string | null, minVersion: string | null, maxVersion: string | null }}
  */
 const parseTomlDependencyText = (dependencyText) => {
-  let name;
-  let versionText = "";
-  try {
-    // Handle dependencies with URLs (e.g., "mmyolo @ git+...")
-    if (dependencyText.includes('@')) {
-      const [name, source] = dependencyText.split('@').map(s => s.trim());
-      return new RepoDependency({ name, provider: 'pypi', versionText: source ?? "" });
-    }
+	let name;
+	let versionText = '';
+	try {
+		// Handle dependencies with URLs (e.g., "mmyolo @ git+...")
+		if (dependencyText.includes('@')) {
+			const [name, source] = dependencyText.split('@').map((s) => s.trim());
+			return new RepoDependency({
+				name,
+				provider: 'pypi',
+				versionText: source ?? '',
+			});
+		}
 
-    [name] = dependencyText.includes('=')
-      ? dependencyText.split(/([<>=!@^]+)/, 2).map(s => s.trim())
-      : [dependencyText.trim(), null];
-    if (!name) return null
-    versionText = dependencyText.replace(name, '').trim();
-    if (!versionText) return new RepoDependency({ name, provider: 'pypi', versionText });
+		[name] = dependencyText.includes('=')
+			? dependencyText.split(/([<>=!@^]+)/, 2).map((s) => s.trim())
+			: [dependencyText.trim(), null];
+		if (!name) return null;
+		versionText = dependencyText.replace(name, '').trim();
+		if (!versionText) return new RepoDependency({ name, provider: 'pypi', versionText });
 
-    const range = semver.validRange(versionText);
-    const version = semver.valid(versionText);
-    const minVersion = range ? semver.minVersion(range)?.version || null : null;
-    const maxVersion = range ? semver.maxSatisfying([versionText], range) || null : null;
+		const range = semver.validRange(versionText);
+		const version = semver.valid(versionText);
+		const minVersion = range ? semver.minVersion(range)?.version || null : null;
+		const maxVersion = range ? semver.maxSatisfying([versionText], range) || null : null;
 
-    return new RepoDependency({
-      name,
-      provider: 'pypi',
-      versionText,
-      version,
-      minVersion,
-      maxVersion
-    });
-  } catch (error) {
-    console.error(`Failed to parse dependency text: ${dependencyText}`, error);
-    return new RepoDependency({ name, provider: 'pypi', versionText })
-  }
+		return new RepoDependency({
+			name,
+			provider: 'pypi',
+			versionText,
+			version,
+			minVersion,
+			maxVersion,
+		});
+	} catch (error) {
+		console.error(`Failed to parse dependency text: ${dependencyText}`, error);
+		return new RepoDependency({ name, provider: 'pypi', versionText });
+	}
 };
 /**
  * Parse dependency version text and return version, minVersion, maxVersion.
@@ -190,165 +197,162 @@ const parseTomlDependencyText = (dependencyText) => {
  * @returns {{ version: string | null, minVersion: string | null, maxVersion: string | null }}
  */
 const parseDependencyVersionText = (dependencyText) => {
-  try {
-    const range = semver.validRange(dependencyText);
-    let version = null;
-    let minVersion = null;
-    let maxVersion = null;
+	try {
+		const range = semver.validRange(dependencyText);
+		let version = null;
+		let minVersion = null;
+		let maxVersion = null;
 
-    if (range) {
-      // Determine the minimum version from the entire range
-      const minVersionObj = semver.minVersion(range);
-      minVersion = minVersionObj ? minVersionObj.toString() : null;
+		if (range) {
+			// Determine the minimum version from the entire range
+			const minVersionObj = semver.minVersion(range);
+			minVersion = minVersionObj ? minVersionObj.toString() : null;
 
-      // Attempt to coerce a version from the dependency text (e.g., ^1.2.3 -> 1.2.3)
-      const coerced = semver.coerce(dependencyText);
-      version = coerced ? coerced.toString() : null;
+			// Attempt to coerce a version from the dependency text (e.g., ^1.2.3 -> 1.2.3)
+			const coerced = semver.coerce(dependencyText);
+			version = coerced ? coerced.toString() : null;
 
-      // Fallback to minVersion if version is not coerced
-      if (!version) {
-        version = minVersion;
-      }
+			// Fallback to minVersion if version is not coerced
+			if (!version) {
+				version = minVersion;
+			}
 
-      // Calculate maxVersion by analyzing the range's comparators
-      const comparators = semver.toComparators(range);
-      let maxVersionStr = null;
-      for (const comparatorSet of comparators) {
-        for (const comp of comparatorSet) {
-          if (comp.startsWith('<')) {
-            // Handle upper bound comparators (e.g., <3.0.0)
-            const versionPart = comp.replace(/^</, '').trim();
-            const cleanedVersion = versionPart.replace(/-0$/, ''); // Remove trailing -0 for prerelease versions
-            const validVersion = semver.valid(cleanedVersion);
-            if (validVersion) {
-              if (!maxVersionStr || semver.gt(validVersion, maxVersionStr)) {
-                maxVersionStr = validVersion;
-              }
-            }
-          } else {
-            // Handle exact versions (e.g., 1.2.3)
-            const exactVersion = semver.valid(comp);
-            if (exactVersion) {
-              if (!maxVersionStr || semver.gte(exactVersion, maxVersionStr)) {
-                maxVersionStr = exactVersion;
-              }
-            }
-          }
-        }
-      }
-      maxVersion = maxVersionStr;
-    }
+			// Calculate maxVersion by analyzing the range's comparators
+			const comparators = semver.toComparators(range);
+			let maxVersionStr = null;
+			for (const comparatorSet of comparators) {
+				for (const comp of comparatorSet) {
+					if (comp.startsWith('<')) {
+						// Handle upper bound comparators (e.g., <3.0.0)
+						const versionPart = comp.replace(/^</, '').trim();
+						const cleanedVersion = versionPart.replace(/-0$/, ''); // Remove trailing -0 for prerelease versions
+						const validVersion = semver.valid(cleanedVersion);
+						if (validVersion) {
+							if (!maxVersionStr || semver.gt(validVersion, maxVersionStr)) {
+								maxVersionStr = validVersion;
+							}
+						}
+					} else {
+						// Handle exact versions (e.g., 1.2.3)
+						const exactVersion = semver.valid(comp);
+						if (exactVersion) {
+							if (!maxVersionStr || semver.gte(exactVersion, maxVersionStr)) {
+								maxVersionStr = exactVersion;
+							}
+						}
+					}
+				}
+			}
+			maxVersion = maxVersionStr;
+		}
 
-    return {
-      version: version || null,
-      minVersion,
-      maxVersion
-    };
-  } catch (error) {
-    console.error(`Failed to parse dependency version text for ${dependencyText}:`, error);
-    return { version: null, minVersion: null, maxVersion: null };
-  }
+		return {
+			version: version || null,
+			minVersion,
+			maxVersion,
+		};
+	} catch (error) {
+		console.error(`Failed to parse dependency version text for ${dependencyText}:`, error);
+		return { version: null, minVersion: null, maxVersion: null };
+	}
 };
 
-
-
 export const parsePyprojectContent = (content) => {
+	try {
+		const data = itoml.parse(content);
+		let dependencies = [];
+		//find 'dependencies' key in data object then add values to dependencies array
+		const findDependencies = (obj) => {
+			for (const key in obj) {
+				if (key === 'dependencies') {
+					if (Array.isArray(obj[key])) {
+						dependencies = [...dependencies, ...obj[key].map(parseTomlDependencyText)];
+					} else if (typeof obj[key] === 'object') {
+						for (const name in obj[key]) {
+							let versionText = obj[key][name];
+							if (name === 'python') continue;
+							if (name === 'file') continue;
+							if (name === 'path') continue;
+							let parsedVersion = {};
+							// if versionText is object check its contains version key
+							if (typeof versionText === 'object' && versionText.version) {
+								versionText = versionText.version;
+							}
+							// if versionText is string then parse it
+							if (typeof versionText === 'string') {
+								parsedVersion = parseDependencyVersionText(versionText);
+							} else {
+								versionText = '';
+							}
 
-  try {
-    const data = itoml.parse(content);
-    let dependencies = [];
-    //find 'dependencies' key in data object then add values to dependencies array
-    const findDependencies = (obj) => {
-      for (const key in obj) {
-        if (key === 'dependencies') {
-          if (Array.isArray(obj[key])) {
-            dependencies = [...dependencies, ...obj[key].map(parseTomlDependencyText)];
-          } else if (typeof obj[key] === 'object') {
-            for (const name in obj[key]) {
-              let versionText = obj[key][name];
-              if (name === 'python') continue;
-              if (name === 'file') continue;
-              if (name === 'path') continue;
-              let parsedVersion = {}
-              // if versionText is object check its contains version key
-              if (typeof versionText === 'object' && versionText.version) {
-                versionText = versionText.version;
-              }
-              // if versionText is string then parse it
-              if (typeof versionText === 'string') {
-                parsedVersion = parseDependencyVersionText(versionText);
-              } else {
-                versionText = '';
-              }
-
-              dependencies.push(new RepoDependency({
-                name,
-                provider: 'pypi',
-                versionText,
-                version: parsedVersion.version,
-                minVersion: parsedVersion.minVersion,
-                maxVersion: parsedVersion.maxVersion
-              }));
-
-            }
-          }
-        } else if (typeof obj[key] === 'object') {
-          findDependencies(obj[key]);
-        }
-      }
-    };
-    findDependencies(data);
-    return dependencies;
-
-  } catch (error) {
-    console.error('Failed to parse pyproject.toml:', error);
-    return [];
-  }
+							dependencies.push(
+								new RepoDependency({
+									name,
+									provider: 'pypi',
+									versionText,
+									version: parsedVersion.version,
+									minVersion: parsedVersion.minVersion,
+									maxVersion: parsedVersion.maxVersion,
+								}),
+							);
+						}
+					}
+				} else if (typeof obj[key] === 'object') {
+					findDependencies(obj[key]);
+				}
+			}
+		};
+		findDependencies(data);
+		return dependencies;
+	} catch (error) {
+		console.error('Failed to parse pyproject.toml:', error);
+		return [];
+	}
 };
 
 export const parsePythonDependencies = async (repo) => {
-  const dependencyList = new RepoDependencyList({ id: repo.id });
+	const dependencyList = new RepoDependencyList({ id: repo.id });
 
-  // Get Python dependency files from GitHub
-  const dependencyFiles = await githubClient.getFileContents(
-    repo.owner,
-    repo.name,
-    ['requirements.txt', 'pyproject.toml']
-  );
+	// Get Python dependency files from GitHub
+	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, [
+		'requirements.txt',
+		'pyproject.toml',
+	]);
 
-  const allFiles = dependencyFiles.filter(file => !file.path.match(/(sample|test|example)/i));
+	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
 
-  if (allFiles.length === 0) {
-    throw new UnprocessableRepoError('No supported Python dependency files found');
-  }
+	if (allFiles.length === 0) {
+		throw new UnprocessableRepoError('No supported Python dependency files found');
+	}
 
-  // group dependency files by folder
-  const folderToFiles = allFiles.reduce((acc, file) => {
-    const folder = file.path.split('/').slice(0, -1).join('/');
-    if (!acc[folder]) acc[folder] = [];
-    acc[folder].push(file);
-    return acc;
-  }, {});
+	// group dependency files by folder
+	const folderToFiles = allFiles.reduce((acc, file) => {
+		const folder = file.path.split('/').slice(0, -1).join('/');
+		if (!acc[folder]) acc[folder] = [];
+		acc[folder].push(file);
+		return acc;
+	}, {});
 
-  for (const folder in folderToFiles) {
-    const files = folderToFiles[folder];
-    let dependencies = [];
-    const provider = 'pypi';
-    for (const file of files) {
-      if (file.path.endsWith('pyproject.toml')) {
-        dependencies = [...dependencies, ...parsePyprojectContent(file.content)];
-      } else if (file.path.endsWith('requirements.txt')) {
-        dependencies = [...dependencies, ...parseRequirementsContent(file.content)];
-      }
-    }
+	for (const folder in folderToFiles) {
+		const files = folderToFiles[folder];
+		let dependencies = [];
+		const provider = 'pypi';
+		for (const file of files) {
+			if (file.path.endsWith('pyproject.toml')) {
+				dependencies = [...dependencies, ...parsePyprojectContent(file.content)];
+			} else if (file.path.endsWith('requirements.txt')) {
+				dependencies = [...dependencies, ...parseRequirementsContent(file.content)];
+			}
+		}
 
+		dependencyList.projects.push(
+			new Project({
+				path: folder,
+				packageProvider: provider,
+				dependencies: dependencies,
+			}),
+		);
+	}
 
-    dependencyList.projects.push(new Project({
-      path: folder,
-      packageProvider: provider,
-      dependencies: dependencies
-    }));
-  }
-
-  return dependencyList;
+	return dependencyList;
 };
