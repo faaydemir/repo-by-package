@@ -154,7 +154,7 @@ const searchRepositories = async (
     p_sortfield: request.sort?.field ?? "stars",
   });
   if (error) {
-    alert(error.message);
+    console.error(error);
 
     throw new Error(error.message);
   }
@@ -170,7 +170,7 @@ const countRepositories = async (
     p_packageids: request.packageIds ?? [],
   });
   if (error) {
-    alert(error.message);
+    console.error(error);
     throw new Error(error.message);
   }
 
@@ -185,7 +185,7 @@ const searchPackagesById = async (
   });
 
   if (error) {
-    alert(error.message);
+    console.error(error);
     throw new Error(error.message);
   }
 
@@ -215,7 +215,7 @@ const searchPackages = async (
   });
 
   if (error) {
-    alert(error.message);
+    console.error(error);
     throw new Error(error.message);
   }
 
@@ -235,7 +235,7 @@ const getProviderStats = async (): Promise<ProviderStats[]> => {
   const { data, error } = await supabase.rpc("get_all_provider_stats", {});
 
   if (error) {
-    alert(error.message);
+    console.error(error);
     throw new Error(error.message);
   }
   return data as ProviderStats[];
