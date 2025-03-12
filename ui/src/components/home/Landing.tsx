@@ -10,8 +10,8 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
 		<>
 			{appInfo && (
 				<div className="min-h-screen bg-gradient-to-br">
-					<div className="container mx-auto max-w-5xl px-4 pb-6 md:px-6 md:pb-32 md:pt-10">
-						<div className="relative flex flex-col items-start text-center">
+					<div className="container max-w-5xl px-4 pb-6 md:px-0 md:pb-32 md:pt-10">
+						<div className="relative flex flex-col items-start">
 							<div className="flex flex-col items-center justify-center gap-5 md:flex-row">
 								<div>
 									<h1 className="mt-4 text-start text-2xl font-semibold text-gray-900 md:mt-0 md:text-2xl lg:text-5xl">
@@ -31,7 +31,7 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
 								<Link
 									href={`/${provider.name}`}
 									key={index}
-									className="group flex h-full cursor-pointer flex-col rounded-md border border-gray-300 p-3 transition-all duration-300 hover:border-gray-500"
+									className="group flex h-full cursor-pointer flex-col rounded-md border border-gray-300 bg-white p-3 transition-all duration-300 hover:border-gray-500"
 								>
 									<div className="flex h-full flex-1 flex-col gap-3">
 										<div className="flex items-center justify-between">
@@ -54,16 +54,16 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
 											{provider.languageStats.map((languageStat, langIndex) => (
 												<div
 													key={langIndex}
-													className="flex w-full items-center gap-2 rounded-sm px-0 py-1.5 text-sm font-medium text-gray-600 transition-all md:items-start"
+													className="flex w-full items-center gap-2 rounded-sm px-0 py-1.5 text-sm font-medium text-gray-600 transition-all"
 												>
 													<TechIcon tech={languageStat.language} size="sm" />
-													<div className="flex h-full flex-1 flex-row items-center justify-between md:flex-col md:items-start">
+													<div className="flex h-full flex-1 flex-row items-center justify-between">
 														<h5 className="text-md font-semibold text-gray-600 transition-colors">
 															{languageStat.language}
 														</h5>
-														<div className="flex flex-col items-end md:items-baseline">
+														<div className="e flex flex-col items-end">
 															<span className="mr-1 font-bold">{languageStat.projectCount.toLocaleString()}</span>
-															<span className="text-xs text-gray-500 md:text-sm">projects</span>
+															<span className="text-xs text-gray-500">projects</span>
 														</div>
 													</div>
 												</div>
