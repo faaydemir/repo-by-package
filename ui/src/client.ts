@@ -86,7 +86,7 @@ export type ProviderStats = {
 	name: string;
 	dependencyCount: number;
 	repoCount: number;
-	topdependencies: DependencyCount[];
+	topDependencies: DependencyCount[];
 };
 
 interface RepositoryResponseItems {
