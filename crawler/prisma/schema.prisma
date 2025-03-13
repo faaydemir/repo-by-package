@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["private"]
 }
 
 model Repo {
@@ -28,12 +30,14 @@ model Repo {
   updatedAt          DateTime?
   pushedAt           DateTime?
   languages          String[]         @default([])
-  languageDetails    Json? 
+  languageDetails    Json?
   insertedAt         DateTime         @default(now())
   packageProcessedAt DateTime?
   processible        Boolean          @default(true)
   id                 Int              @id @default(autoincrement())
   repoRependencies   RepoDependency[]
+
+  @@schema("private")
 }
 
 model RepoDependency {
@@ -46,7 +50,8 @@ model RepoDependency {
   dependencyMappings DependencyMapping[]
   repo               Repo                @relation(fields: [repoId], references: [id])
 
-  @@unique([repoId, path])
+  @@unique([repoId, path, packageProvider])
+  @@schema("private")
 }
 
 model Dependency {
@@ -56,6 +61,7 @@ model Dependency {
   dependencyMappings DependencyMapping[]
 
   @@unique([name, provider])
+  @@schema("private")
 }
 
 model DependencyMapping {
@@ -72,13 +78,29 @@ model DependencyMapping {
   repoDependency   RepoDependency @relation(fields: [repoDependencyId], references: [id])
 
   @@unique([repoDependencyId, dependencyId])
+  @@schema("private")
 }
 
 model RepoCrawTaskRun {
-  taskKey             String    @unique
-  lastRunAt           DateTime?
-  isCompleted Boolean   @default(false)
-  error               String?
-  id                  Int       @id @default(autoincrement())
-  maxStars            Int
+  id             Int       @id @default(autoincrement())
+  taskKey        String    @unique
+  lastRunAt      DateTime?
+  isCompleted    Boolean   @default(false)
+  error          String?
+  starCursor     Int
+  completedCount Int?
+
+  @@schema("private")
+}
+
+model DependencyParseTaskRun {
+  id             Int       @id @default(autoincrement())
+  taskKey        String    @unique
+  lastRunAt      DateTime?
+  isCompleted    Boolean   @default(false)
+  error          String?
+  idCursor       Int?
+  completedCount Int?
+
+  @@schema("private")
 }

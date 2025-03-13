@@ -11,6 +11,7 @@ import { parseCSharpDependencies } from './depdendency-parser/csharp-dependency-
 import { REPO_CRAWL_TASK_RUN_INTERVAL, REPO_REPROCESS_INTERVAL_DAYS } from './constants.js';
 import sleep from './sleep.js';
 import prisma from './prisma.js';
+import DependencyParseTaskRun from './model/dependency-parse-task-run.js';
 
 const REPO_TAKE_COUNT = 10;
 
@@ -76,7 +77,7 @@ const clearRepoDependencies = async (repoId) => {
  */
 const saveRepoDependencyList = async (repoDependencyList) => {
 	if (!repoDependencyList || !repoDependencyList.projects || !Array.isArray(repoDependencyList.projects)) {
-		throw new Error('Invalid repoDependencyList structure');
+		return;
 	}
 
 	for (const project of repoDependencyList.projects) {
@@ -122,11 +123,6 @@ const saveRepoDependencyList = async (repoDependencyList) => {
 					data: depdendencyMappings, // Insert all at once
 					skipDuplicates: true, // Avoid conflicts
 				});
-
-				await tx.repo.update({
-					where: { id: repoDependencyList.id },
-					data: { packageProcessedAt: new Date() },
-				});
 			},
 			{ maxWait: 60000, timeout: 60000 },
 		);
@@ -138,17 +134,27 @@ const saveRepoDependencyList = async (repoDependencyList) => {
  * @returns
  */
 const parseAndSaveDependencies = async (repo) => {
-	const repoLanguages = [...new Set([repo.language, ...repo.languages])];
+	await clearRepoDependencies(repo.id);
+	// replace typescript with javascript to avoid duplicate processing
+	const allLanguages = [repo.language, ...repo.languages].map((lang) =>
+		lang === supportedLanguages.TypeScript ? supportedLanguages.JavaScript : lang,
+	);
+	const repoLanguages = [...new Set(allLanguages)];
+	const processState = {};
 	for (const language of repoLanguages) {
 		try {
+			if (Object.values(supportedLanguages).indexOf(language) === -1) {
+				console.log(`${new Date()} - Processing repo ${repo.fullName} - ${language} - Not Supported`);
+				continue;
+			}
 			var repoDependencyList = await parseDependencies(repo, language);
-
-			await clearRepoDependencies(repo.id);
 			await saveRepoDependencyList(repoDependencyList);
+			processState[language] = true;
 		} catch (error) {
-			console.error(error);
+			console.error(`${new Date()} - Processing repo ${repo.fullName} - ${language} - Error: ${error.message}`);
 			if (error instanceof UnprocessableRepoError) {
-				await Repo.update(repo.id, { processible: false });
+				// await Repo.update(repo.id, { processible: false });
+				processState[language] = false;
 			} else if (error instanceof RateLimitError) {
 				const rateLimitResetTime = error.rateLimitting.rateLimitReset;
 				const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
@@ -156,38 +162,42 @@ const parseAndSaveDependencies = async (repo) => {
 			}
 		}
 	}
+	await Repo.update(repo.id, { packageProcessedAt: new Date() });
 };
 
 const processUnprocessedRepos = async () => {
-	let idCursor = 0;
+	let taskRun = await DependencyParseTaskRun.getOrCreateByKey('parse-new-repo-dependencies');
 	do {
 		const repos = await Repo.getForProcessing({
-			idCursor,
+			idCursor: taskRun.idCursor,
 			count: REPO_TAKE_COUNT,
 		});
-		if (repos.length === 0) return;
+		if (repos.length === 0) break;
 		for (const repo of repos) {
 			await parseAndSaveDependencies(repo);
 		}
-		idCursor = repos[repos.length - 1].id;
+		await taskRun.updateRun(repos[repos.length - 1].id);
 	} while (true);
+
+	await taskRun.completed();
 };
 
 const reprocessRepos = async () => {
-	let idCursor = 0;
+	let taskRun = await DependencyParseTaskRun.getOrCreateByKey('reprocess-repo-dependencies');
 	do {
 		const minDateToProcess = new Date(Date.now() - REPO_REPROCESS_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
 		let repos = await Repo.getReposToReprocess({
 			minDate: minDateToProcess,
-			idCursor,
+			idCursor: taskRun.idCursor,
 			count: REPO_TAKE_COUNT,
 		});
-		if (repos.length === 0) return;
+		if (repos.length === 0) break;
 		for (const repo of repos) {
 			await parseAndSaveDependencies(repo);
 		}
-		idCursor = repos[repos.length - 1].id;
+		await taskRun.updateRun(repos[repos.length - 1].id);
 	} while (true);
+	await taskRun.completed();
 };
 
 const parseDependenciesTask = async () => {
@@ -203,6 +213,7 @@ const parseDependenciesTask = async () => {
 			await sleep(REPO_CRAWL_TASK_RUN_INTERVAL);
 		} catch (error) {
 			console.error(error);
+			await sleep(1000 * 60 * 1);
 		}
 	}
 };

@@ -1,13 +1,47 @@
+import { LEAST_START_COUNT_FOR_REPO } from '../constants.js';
 import prisma from '../prisma.js';
 
 class RepoCrawTaskRun {
 	constructor(data) {
 		this.id = data.id;
 		this.taskKey = data.taskKey;
-		this.maxStars = data.maxStars;
+		this.starCursor = data.starCursor;
 		this.lastRunAt = data.lastRunAt;
 		this.isCompleted = data.isCompleted;
 		this.error = data.error;
+		this.completedCount = data.completedCount ?? 0;
+	}
+
+	checkAndResetRun() {
+		const isADayPassedUntilLastRun = new Date() - this.lastRunAt > 1000 * 60 * 60 * 24;
+		if (isADayPassedUntilLastRun) {
+			this.isCompleted = false;
+			this.starCursor = LEAST_START_COUNT_FOR_REPO - 1;
+		}
+		return this;
+	}
+
+	async updateRun(starCursor, isCompleted) {
+		this.starCursor = starCursor;
+		this.lastRunAt = new Date();
+		this.isCompleted = isCompleted;
+		if (isCompleted) {
+			this.completedCount = this.completedCount + 1;
+		}
+		return await RepoCrawTaskRun.update(this.id, {
+			starCursor: this.starCursor,
+			lastRunAt: this.lastRunAt,
+			isCompleted: this.isCompleted,
+		});
+	}
+
+	static async getOrCreateByKey(taskKey) {
+		let taskRun = await RepoCrawTaskRun.getByTaskKey(taskKey);
+		if (!taskRun) {
+			taskRun = await RepoCrawTaskRun.new({ taskKey });
+		}
+		taskRun.checkAndResetRun();
+		return taskRun;
 	}
 
 	static async getByTaskKey(taskKey) {
@@ -32,13 +66,13 @@ class RepoCrawTaskRun {
 		return new RepoCrawTaskRun(response);
 	}
 
-	static async create({ taskKey, maxStars = null, lastRunAt = null, isCompleted = false }) {
+	static async new({ taskKey }) {
 		const result = await prisma.repoCrawTaskRun.create({
 			data: {
 				taskKey,
-				maxStars,
-				lastRunAt,
-				isCompleted,
+				starCursor: LEAST_START_COUNT_FOR_REPO - 1,
+				lastRunAt: new Date(),
+				isCompleted: false,
 			},
 		});
 

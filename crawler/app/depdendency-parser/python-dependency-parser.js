@@ -319,7 +319,7 @@ export const parsePythonDependencies = async (repo) => {
 		'pyproject.toml',
 	]);
 
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
+	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|node_modules|test|example)/i));
 
 	if (allFiles.length === 0) {
 		throw new UnprocessableRepoError('No supported Python dependency files found');

@@ -12,37 +12,24 @@ async function crawlReposTask() {
 			try {
 				const task_key = `crawl_repos_${language}_${LEAST_START_COUNT_FOR_REPO}`;
 
-				let taskRun = await RepoCrawTaskRun.getByTaskKey(task_key);
+				let taskRun = await RepoCrawTaskRun.getOrCreateByKey(task_key);
 
-				let starCursor = LEAST_START_COUNT_FOR_REPO - 1;
-				let isCompleted = false;
-
-				if (taskRun) {
-					starCursor = taskRun.maxStars - 1;
-					isCompleted = taskRun.isCompleted;
-					const isADayPassedUntilLastRun = new Date() - taskRun.lastRunAt > 1000 * 60 * 60 * 24;
-					if (isADayPassedUntilLastRun) {
-						isCompleted = false;
-						taskRun.maxStars = LEAST_START_COUNT_FOR_REPO - 1;
-					}
-				} else {
-					taskRun = await RepoCrawTaskRun.create({
-						taskKey: task_key,
-						maxStars: starCursor,
-					});
-				}
 				let page = 1;
-				while (!isCompleted) {
+				while (!taskRun.isCompleted) {
 					try {
-						let maxStars = taskRun.maxStars;
-						const response = await githubClient.searchReposByLanguage(language, SEARCH_REPO_TAKE, page, starCursor);
+						let starCursor = taskRun.starCursor;
+						const response = await githubClient.searchReposByLanguage(
+							language,
+							SEARCH_REPO_TAKE,
+							page,
+							taskRun.starCursor,
+						);
 						page += 1;
-						isCompleted = response.items.length < SEARCH_REPO_TAKE;
 
 						for (const repo of response.items) {
 							console.log(`${new Date()} - Saving repo ${repo.full_name} - ${repo.stargazers_count}`);
-							if (repo.stargazers_count > maxStars) {
-								maxStars = repo.stargazers_count;
+							if (repo.stargazers_count > starCursor) {
+								starCursor = repo.stargazers_count;
 							}
 
 							const languageDetails = await githubClient.getRepoLanguages(repo.owner.login, repo.name);
@@ -80,14 +67,10 @@ async function crawlReposTask() {
 							}
 						}
 
-						taskRun = await RepoCrawTaskRun.update(taskRun.id, {
-							maxStars: maxStars,
-							lastRunAt: new Date(),
-							isCompleted: isCompleted,
-						});
+						await taskRun.updateRun(starCursor, response.items.length < SEARCH_REPO_TAKE);
 					} catch (error) {
 						if (error instanceof EndOfSeachError) {
-							starCursor = taskRun.maxStars - 1;
+							taskRun.updateRun(taskRun.starCursor, false);
 							page = 1;
 						} else if (error instanceof RateLimitError) {
 							const rateLimitResetTime = error.rateLimitting.rateLimitReset;
@@ -96,17 +79,17 @@ async function crawlReposTask() {
 							await sleep(remainingTimeInMilliseconds);
 						} else {
 							console.error(error);
-							sleep(1000 * 60 * 1); // sleep for 1 a minute if there is an error (in case of network or db error)
+							await sleep(1000 * 60 * 1); // sleep for 1 a minute if there is an error (in case of network or db error)
 						}
 					}
 				}
 			} catch (error) {
 				console.error(error);
-				sleep(1000 * 60 * 1); // sleep for 1 a minute if there is an error (in case of network or db error)
+				await sleep(1000 * 60 * 1); // sleep for 1 a minute if there is an error (in case of network or db error)
 			}
 		}
 
-		await sleep(1000 * 60 * 60 * 4); // sleep for 4 hours if crawling is completed
+		await sleep(1000 * 60 * 60 * 10); // sleep for 10 hours if crawling is completed
 	}
 }
 

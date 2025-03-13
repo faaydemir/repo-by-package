@@ -43,7 +43,6 @@ class Repo {
 		const results = await prisma.repo.findMany({
 			where: {
 				packageProcessedAt: null,
-				processible: true,
 				id: {
 					gt: idCursor,
 				},
