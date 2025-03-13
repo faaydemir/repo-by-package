@@ -16,7 +16,7 @@ const Header = () => {
 					<div className="flex w-full flex-row items-center gap-6 md:justify-between">
 						<Link href="/" className="flex items-center gap-2">
 							<img src={appInfo.favicon} alt={appInfo.name} className="h-7 w-7 object-contain md:h-7 md:w-7" />
-							<span className="text-md hidden font-semibold text-gray-900 md:inline">{appInfo.name}</span>
+							<span className="text-md hidden text-gray-900 md:inline">{appInfo.name}</span>
 						</Link>
 						<div className="ml-0 flex h-full flex-row items-center gap-2 px-0 py-0 md:ml-4 md:gap-4 md:px-2">
 							{appInfo.supportedProviders.map((provider) => {

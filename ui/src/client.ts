@@ -78,10 +78,15 @@ export type LanguageStat = {
 	projectCount: number;
 };
 
+export type DependencyCount = {
+	name: string;
+	count: number;
+};
 export type ProviderStats = {
 	name: string;
 	dependencyCount: number;
-	languageStats: LanguageStat[];
+	repoCount: number;
+	topdependencies: DependencyCount[];
 };
 
 interface RepositoryResponseItems {
@@ -181,22 +186,14 @@ const searchPackagesById = async (packageIds: number[]): Promise<PackageWithDeta
 		throw new Error(error.message);
 	}
 
-	return (
-		data?.map((pkg) => ({
-			id: pkg.id,
-			name: pkg.name,
-			provider: pkg.provider,
-			repoCount: pkg.repocount,
-			tags: pkg.tags,
-		})) ?? []
-	);
+	return data as PackageWithDetails[];
 };
 
 const searchPackages = async (request: SearchPackageRequest): Promise<SearchPackageResponse> => {
 	if (!request?.query && !request?.usedWithPackages && !request?.provider) {
 		throw new Error('Missing required fields');
 	}
-	const { data, error } = await supabase.rpc('search_packages_v2', {
+	const { data, error } = await supabase.rpc('search_packages', {
 		p_name: request.query ?? '',
 		p_packageids: request.usedWithPackages ?? [],
 		p_page: 1,

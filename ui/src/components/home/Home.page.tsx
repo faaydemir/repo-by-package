@@ -167,7 +167,7 @@ export default function Home({ providerId }: Props) {
 				<div
 					className={`${showPackageBar ? 'block' : 'hidden md:block'} mb-4 w-full border-gray-300 bg-white md:mb-0 md:min-h-[calc(100vh-8rem)] md:w-80 md:border`}
 				>
-					<div className="absolute z-50 flex max-h-[100vh] w-full flex-col border-gray-300 px-4 py-2 md:sticky md:top-0 md:h-[calc(100vh-4rem)] md:max-h-none">
+					<div className="absolute z-50 flex max-h-[100vh] w-full flex-col border-gray-300 bg-white px-4 py-2 md:sticky md:top-0 md:h-[calc(100vh-4rem)] md:max-h-none">
 						<div className="-mx-4 -mt-2 flex h-14 items-center justify-center border-b border-gray-300 px-4 py-2">
 							<SearchBar onSearch={handleSearch} />
 						</div>
