@@ -3,7 +3,7 @@ import { PackageTag } from '@/components/home/PackageTag';
 import Link from 'next/link';
 import { useState } from 'react';
 import { TechIcon } from '../common/TechIcon';
-import { StarIcon } from '../common/Icon';
+import { OpenPageIcon, StarIcon } from '../common/Icon';
 
 interface RepositoryCardProps {
 	repository: Repository;
@@ -77,9 +77,10 @@ export function RepositoryCard({ repository, onPackageClick }: RepositoryCardPro
 						<Link
 							href={project.url ?? url}
 							target="_blank"
-							className="hover:gray-blue-800 text-xs font-semibold text-gray-700"
+							className="mt-1 text-xs font-semibold text-gray-700 hover:underline"
 						>
 							{project.path}
+							<OpenPageIcon size={4} className="ml-1 inline-block" />
 						</Link>
 						<div className="w-100 flex flex-wrap items-center justify-start gap-1">
 							{project.packages.slice(0, extenedPackages[project.id] ? project.packages.length : 10).map((pkg) => (

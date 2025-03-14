@@ -1,3 +1,4 @@
+import appInfo from './constant/appInfo';
 import { supabase } from './lib/supabase';
 import cache from './utils/cache';
 
@@ -193,11 +194,14 @@ const searchPackages = async (request: SearchPackageRequest): Promise<SearchPack
 	if (!request?.query && !request?.usedWithPackages && !request?.provider) {
 		throw new Error('Missing required fields');
 	}
+
+	const perPage = request?.usedWithPackages?.length ? 40 : 100;
+
 	const { data, error } = await supabase.rpc('search_packages', {
 		p_name: request.query ?? '',
 		p_packageids: request.usedWithPackages ?? [],
 		p_page: 1,
-		p_per_page: 30,
+		p_per_page: perPage,
 		p_provider: request.provider ?? '',
 	});
 
@@ -225,7 +229,8 @@ const getProviderStats = async (): Promise<ProviderStats[]> => {
 		console.error(error);
 		throw new Error(error.message);
 	}
-	return data as ProviderStats[];
+	data.sort((a, b) => b.repoCount - a.repoCount);
+	return data.filter((stat) => appInfo.supportedProviders.includes(stat.name)) as ProviderStats[];
 };
 
 const generateSearchRepositoriesCacheKey = (request: RepositoryFilter): string => {

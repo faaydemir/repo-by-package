@@ -29,6 +29,10 @@ export const searchRepositories = async (
 	setState: React.Dispatch<React.SetStateAction<State>>,
 ) => {
 	try {
+		if (!searchParams?.packageIds?.length) {
+			setState((prev) => ({ ...prev, repositories: [], totalRepoCount: 0 }));
+			return;
+		}
 		setState((prev) => ({ ...prev, isReposLoading: true }));
 		const currentOperationIndex: number = ++lastSearchRepositoriesIndex;
 
@@ -49,8 +53,7 @@ export const searchRepositories = async (
 
 export const loadAppInfo = async (setState: React.Dispatch<React.SetStateAction<State>>) => {
 	try {
-		let providerStats = await client.getProviderStats();
-		providerStats = providerStats.filter((stat) => appInfo.supportedProviders.includes(stat.name));
+		const providerStats = await client.getProviderStats();
 		const info = {
 			...appInfo,
 			providerStats: providerStats,

@@ -103,7 +103,6 @@ export default function Home({ providerId }: Props) {
 	};
 
 	const loadRepositories = async () => {
-		if (state.selectedPackages.length === 0) return;
 		await searchRepositories(
 			{
 				packageIds: state.selectedPackages.map((p) => p.id),
@@ -163,9 +162,9 @@ export default function Home({ providerId }: Props) {
 				</button>
 			</div>
 
-			<div className="relative flex flex-col md:flex-row">
+			<div className="flex flex-col md:flex-row">
 				<div
-					className={`${showPackageBar ? 'block' : 'hidden md:block'} mb-4 w-full border-gray-300 bg-white md:mb-0 md:min-h-[calc(100vh-8rem)] md:w-80 md:border`}
+					className={`${showPackageBar ? 'block' : 'hidden md:block'} relative mb-4 w-full border-gray-300 bg-white pl-[1px] md:mb-0 md:min-h-[calc(100vh-8rem)] md:w-80 md:border`}
 				>
 					<div className="absolute z-50 flex max-h-[100vh] w-full flex-col border-gray-300 bg-white px-4 py-2 md:sticky md:top-0 md:h-[calc(100vh-4rem)] md:max-h-none">
 						<div className="-mx-4 -mt-2 flex h-14 items-center justify-center border-b border-gray-300 px-4 py-2">
