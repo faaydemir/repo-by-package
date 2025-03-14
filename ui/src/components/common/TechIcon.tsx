@@ -28,7 +28,7 @@ const getIconPath = (tech: string): string => {
 	let normalizedLang = tech.toLowerCase();
 	if (SUPPORTED_TECHNOLOGIES.includes(normalizedLang as SupportedTechnology)) {
 		if (normalizedLang == 'c#') normalizedLang = 'csharp';
-		return `/repo-by-package/${normalizedLang}.svg`;
+		return `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/${normalizedLang}.svg`;
 	}
 	return '';
 };
