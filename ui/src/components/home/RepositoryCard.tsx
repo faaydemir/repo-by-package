@@ -3,11 +3,47 @@ import { PackageTag } from '@/components/home/PackageTag';
 import Link from 'next/link';
 import { useState } from 'react';
 import { TechIcon } from '../common/TechIcon';
-import { OpenPageIcon, StarIcon } from '../common/Icon';
+import { OpenPageIcon, SearchIcon, StarIcon } from '../common/Icon';
 
 interface RepositoryCardProps {
 	repository: Repository;
+	selectedPackages: Package[];
 	onPackageClick?: (pkg: Package) => void;
+}
+
+function getGithubSearchUrl(pkg: Package, repo: string, folder: string): string | undefined {
+	//TODO: maybe move this to client ?
+	if (pkg.provider === 'nuget') return;
+	//TODO: fix for npm package path delete when project path is correctly setted on parsing
+	if (folder && folder.endsWith('package.json')) {
+		folder = folder.replace('package.json', '');
+	}
+	// if (folder && !folder.startsWith('/')) {
+	// 	folder = '/' + folder;
+	// }
+	const providerFileMapping: Record<string, string[]> = {
+		npm: ['js', 'ts', 'jsx', 'tsx', 'vue', 'svelte'],
+		pypi: ['py'],
+		nuget: ['cs'],
+	};
+
+	const extensionQuery = providerFileMapping[pkg.provider]
+		? providerFileMapping[pkg.provider].map((ext) => `+path%3A*.${ext}`).join('+OR+')
+		: undefined;
+	const searchByProviderNameQuery = `q=${pkg.name}`;
+
+	let searchUrl = `https://github.com/search?${searchByProviderNameQuery}`;
+	if (repo) {
+		searchUrl += `+repo%3A${encodeURIComponent(repo)}`;
+	}
+	if (folder) {
+		searchUrl += `+path%3A${encodeURIComponent(folder)}`;
+	}
+	if (extensionQuery) {
+		searchUrl += extensionQuery;
+	}
+	searchUrl += '&type=Code';
+	return searchUrl;
 }
 
 function formatDate(date: Date): string {
@@ -33,7 +69,7 @@ function formatDate(date: Date): string {
 	}
 }
 
-export function RepositoryCard({ repository, onPackageClick }: RepositoryCardProps) {
+export function RepositoryCard({ repository, selectedPackages, onPackageClick }: RepositoryCardProps) {
 	const { name, topics, description, language, url, stars, updatedAt, projects } = repository;
 
 	const [showAllProjects, setShowAllProjects] = useState<boolean>(false);
@@ -42,6 +78,14 @@ export function RepositoryCard({ repository, onPackageClick }: RepositoryCardPro
 	const showHideAllPackages = (projectId: number) => {
 		setExtendedPackages((prev) => ({ ...prev, [projectId]: !prev[projectId] }));
 	};
+
+	const getPackageSearchUrls = (pkg: Package[], repo: string, folder: string): { url: string; name: string }[] => {
+		pkg = pkg ?? [];
+		return pkg
+			.map((p) => ({ url: getGithubSearchUrl(p, repo, folder), name: p.name }))
+			.filter((p): p is { url: string; name: string } => p.url !== undefined);
+	};
+
 	return (
 		<div className="flex flex-col gap-1 rounded-sm border border-gray-300 bg-white px-4 py-2">
 			<div className="flex items-center justify-between pb-0.5">
@@ -74,14 +118,27 @@ export function RepositoryCard({ repository, onPackageClick }: RepositoryCardPro
 			{projects.length > 0 &&
 				projects.slice(0, showAllProjects ? projects.length : 3).map((project) => (
 					<div key={project.id} className="mt-2 flex flex-col items-start gap-0">
-						<Link
-							href={project.url ?? url}
-							target="_blank"
-							className="mt-1 text-xs font-semibold text-gray-700 hover:underline"
-						>
-							{project.path}
-							<OpenPageIcon size={4} className="ml-1 inline-block" />
-						</Link>
+						<div className="flex flex-wrap items-center gap-3 py-0.5">
+							<Link
+								href={project.url ?? url}
+								target="_blank"
+								className="border-b border-transparent text-xs font-semibold text-gray-700 hover:border-gray-500 md:mr-5"
+							>
+								{project?.path || '/'}
+								<OpenPageIcon className="ml-1 inline-block h-4 w-4" />
+							</Link>
+							{getPackageSearchUrls(selectedPackages, repository.fullName, project.path).map((s) => (
+								<Link
+									key={s.url}
+									href={s.url}
+									target="_blank"
+									className="border-b border-transparent text-xs font-semibold text-gray-600 hover:border-gray-500"
+								>
+									{s.name}
+									<SearchIcon className="inline-block h-4 w-4" />
+								</Link>
+							))}
+						</div>
 						<div className="w-100 flex flex-wrap items-center justify-start gap-1">
 							{project.packages.slice(0, extenedPackages[project.id] ? project.packages.length : 10).map((pkg) => (
 								<button key={pkg.id} onClick={() => onPackageClick?.(pkg)}>

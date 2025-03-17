@@ -58,7 +58,7 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
 										<div className="mt-auto">
 											<span className="flex w-full items-center justify-center rounded-sm border border-transparent px-6 text-xs font-medium text-gray-400 transition-all group-hover:text-gray-600 md:py-3">
 												Browse {provider.name} packages
-												<NextIcon size={4} className="transition-transform group-hover:translate-x-1" />
+												<NextIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
 											</span>
 										</div>
 									</div>

@@ -203,7 +203,7 @@ export function SelectedPackageTag({
 					target="_blank"
 					href={getPackageUrl(provider, name)}
 				>
-					<OpenPageIcon size={5} />
+					<OpenPageIcon className="h-5 w-5" />
 				</a>
 			)}
 		</div>

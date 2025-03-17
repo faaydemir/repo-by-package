@@ -16,6 +16,7 @@ import Landing from './Landing';
 import { useRouter } from 'next/navigation';
 import { BackIcon, SeachMenuIcon } from '../common/Icon';
 import { debounce } from '@/utils/debounce';
+import Spinner from '../common/Spinner';
 
 type Props = { providerId?: string };
 
@@ -100,6 +101,7 @@ export default function Home({ providerId }: Props) {
 
 	const handlePagination = (pagination: Pagination) => {
 		setState((prev) => ({ ...prev, repoPagination: pagination }));
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 	};
 
 	const loadRepositories = async () => {
@@ -170,6 +172,7 @@ export default function Home({ providerId }: Props) {
 						<div className="-mx-4 -mt-2 flex h-14 items-center justify-center border-b border-gray-300 px-4 py-2">
 							<SearchBar onSearch={handleSearch} />
 						</div>
+						{state.isPackagesLoading && <Spinner />}
 						<div className="-mx-4 flex-1 overflow-y-auto pl-4 pr-3 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500 [&::-webkit-scrollbar-track]:bg-gray-100 dark:[&::-webkit-scrollbar-track]:bg-neutral-700 [&::-webkit-scrollbar]:w-1">
 							<PackageList
 								title={getPackageListTitle()}
@@ -181,7 +184,7 @@ export default function Home({ providerId }: Props) {
 				</div>
 
 				<div className="min-h-[calc(100vh-12rem)] flex-1 space-y-4 border-gray-300 md:min-h-[calc(100vh-8rem)] md:border-b md:border-r md:border-t">
-					<div className="space-y-2 px-2 py-2 md:px-4 md:pt-2">
+					<div className="px-2 py-2 md:px-4 md:pt-2">
 						<div
 							className={`${state.selectedPackages.length > 0 ? 'flex' : 'hidden'} -mx-2 -mt-2 min-h-14 flex-wrap items-center justify-center border-b border-gray-300 bg-white px-2 py-2 md:-mx-4 md:flex md:px-4`}
 						>
@@ -192,7 +195,7 @@ export default function Home({ providerId }: Props) {
 								onProviderRemove={() => handleProviderRemove()}
 							/>
 						</div>
-
+						{state.isReposLoading && <Spinner />}
 						{state.selectedPackages?.length > 0 ? (
 							<>
 								<div className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -204,11 +207,14 @@ export default function Home({ providerId }: Props) {
 										<SortButton label="Stars" type="stars" activeSort={state.repoSort} onClick={handleSort} />
 										<SortButton label="Updated" type="updatedAt" activeSort={state.repoSort} onClick={handleSort} />
 									</div>
+
 								</div>
 
-								<div className="space-y-4 md:space-y-5">
+								<div className="space-y-4 md:space-y-5 relative">
 									{state.repositories.map((repo, i) => (
-										<RepositoryCard key={i} repository={repo} onPackageClick={handlePackageSelect} />
+										<RepositoryCard key={i} repository={repo}
+											selectedPackages={state.selectedPackages}
+											onPackageClick={handlePackageSelect} />
 									))}
 								</div>
 

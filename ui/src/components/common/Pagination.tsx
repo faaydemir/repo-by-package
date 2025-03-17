@@ -54,11 +54,10 @@ export function Pagination({ pagination, total, onPaginationChange }: Pagination
 					<button
 						key={pageNum}
 						onClick={() => handlePageChange(pageNum as number)}
-						className={`h-7 w-7 rounded-sm text-xs font-medium transition-colors ${
-							page === pageNum
-								? 'border border-gray-300 bg-gray-100 text-gray-900'
-								: 'border border-transparent text-gray-700 hover:border-gray-300 hover:text-gray-900'
-						} `}
+						className={`h-7 w-7 rounded-sm text-xs font-medium transition-colors ${page === pageNum
+							? 'border border-gray-300 bg-gray-100 text-gray-900'
+							: 'border border-transparent text-gray-700 hover:border-gray-300 hover:text-gray-900'
+							} `}
 					>
 						{pageNum}
 					</button>
