@@ -1,6 +1,6 @@
 import prisma from '../prisma.js';
 
-//TODO: limit the number items in dependencyCache mode do dependency model
+//TODO: limit the number items in dependencyCache
 const dependencyCache = {};
 
 class Dependency {

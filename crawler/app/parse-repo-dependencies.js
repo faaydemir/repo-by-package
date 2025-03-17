@@ -13,19 +13,22 @@ import sleep from './sleep.js';
 import prisma from './prisma.js';
 import DependencyParseTaskRun from './model/dependency-parse-task-run.js';
 
-const REPO_TAKE_COUNT = 10;
-
+const REPO_TAKE_COUNT = 5;
+const PROCESS_STATE = {
+	PROCESSED: 'processed',
+	ERROR: 'error',
+	UNPROCESSIBLE: 'unprocessible',
+};
 const repoDependencyProcessorByLanguage = {};
 /**
  *
  * @param {*} language
- * @param {(repo: Repo) => Promise<RepoDependencyMapping>} processor
+ * @param {(repo: Repo) => Promise<RepoDependencyMapping>} parser
  */
-
-const setLanguageRepoProcessor = (language, processor) => {
-	repoDependencyProcessorByLanguage[language] = processor;
+const setDependencyParserForLang = (language, parser) => {
+	repoDependencyProcessorByLanguage[language] = parser;
 };
-const getLanguageRepoProcessor = (language) => {
+const getDependencyParserForLang = (language) => {
 	return repoDependencyProcessorByLanguage[language];
 };
 
@@ -36,10 +39,10 @@ const getLanguageRepoProcessor = (language) => {
  * @returns {Promise<RepoDependencyList>}
  */
 const parseDependencies = async (repo, language) => {
-	const processor = getLanguageRepoProcessor(language);
+	const parser = getDependencyParserForLang(language);
 	console.log(`${new Date()} - Processing repo ${repo.fullName} - ${language}`);
-	if (processor) {
-		return await processor(repo);
+	if (parser) {
+		return await parser(repo);
 	}
 };
 
@@ -134,7 +137,7 @@ const saveRepoDependencyList = async (repoDependencyList) => {
  * @returns
  */
 const parseAndSaveDependencies = async (repo) => {
-	await clearRepoDependencies(repo.id);
+	const dependencies = [];
 	// replace typescript with javascript to avoid duplicate processing
 	const allLanguages = [repo.language, ...repo.languages].map((lang) =>
 		lang === supportedLanguages.TypeScript ? supportedLanguages.JavaScript : lang,
@@ -147,26 +150,34 @@ const parseAndSaveDependencies = async (repo) => {
 				console.log(`${new Date()} - Processing repo ${repo.fullName} - ${language} - Not Supported`);
 				continue;
 			}
-			var repoDependencyList = await parseDependencies(repo, language);
-			await saveRepoDependencyList(repoDependencyList);
-			processState[language] = true;
+			const repoDependencyList = await parseDependencies(repo, language);
+			dependencies.push(repoDependencyList);
+			processState[language] = PROCESS_STATE.PROCESSED;
 		} catch (error) {
 			console.error(`${new Date()} - Processing repo ${repo.fullName} - ${language} - Error: ${error.message}`);
 			if (error instanceof UnprocessableRepoError) {
 				// await Repo.update(repo.id, { processible: false });
-				processState[language] = false;
+				processState[language] = PROCESS_STATE.UNPROCESSIBLE;
 			} else if (error instanceof RateLimitError) {
 				const rateLimitResetTime = error.rateLimitting.rateLimitReset;
 				const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
 				await sleep(remainingTimeInMilliseconds);
+			} else {
+				processState[language] = PROCESS_STATE.ERROR + ' | ' + error.message;
 			}
+		}
+	}
+	if (dependencies.length > 0) {
+		await clearRepoDependencies(repo.id);
+		for (const repoDependencyList of dependencies) {
+			await saveRepoDependencyList(repoDependencyList);
 		}
 	}
 	await Repo.update(repo.id, { packageProcessedAt: new Date() });
 };
 
-const processUnprocessedRepos = async () => {
-	let taskRun = await DependencyParseTaskRun.getOrCreateByKey('parse-new-repo-dependencies');
+const processNewRepos = async () => {
+	let taskRun = await DependencyParseTaskRun.getOrCreateByKey('process-new-repo-dependencies');
 	do {
 		const repos = await Repo.getForProcessing({
 			idCursor: taskRun.idCursor,
@@ -174,7 +185,9 @@ const processUnprocessedRepos = async () => {
 		});
 		if (repos.length === 0) break;
 		for (const repo of repos) {
-			await parseAndSaveDependencies(repo);
+			try {
+				await parseAndSaveDependencies(repo);
+			} catch {}
 		}
 		await taskRun.updateRun(repos[repos.length - 1].id);
 	} while (true);
@@ -182,18 +195,20 @@ const processUnprocessedRepos = async () => {
 	await taskRun.completed();
 };
 
-const reprocessRepos = async () => {
+const reprocessOldRepos = async () => {
 	let taskRun = await DependencyParseTaskRun.getOrCreateByKey('reprocess-repo-dependencies');
 	do {
-		const minDateToProcess = new Date(Date.now() - REPO_REPROCESS_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
-		let repos = await Repo.getReposToReprocess({
-			minDate: minDateToProcess,
+		const maxDateToProcess = new Date(Date.now() - REPO_REPROCESS_INTERVAL_DAYS * 24 * 60 * 60 * 1000);
+		const repos = await Repo.getReposToReprocess({
+			maxDate: maxDateToProcess,
 			idCursor: taskRun.idCursor,
 			count: REPO_TAKE_COUNT,
 		});
 		if (repos.length === 0) break;
 		for (const repo of repos) {
-			await parseAndSaveDependencies(repo);
+			try {
+				await parseAndSaveDependencies(repo);
+			} catch {}
 		}
 		await taskRun.updateRun(repos[repos.length - 1].id);
 	} while (true);
@@ -201,15 +216,15 @@ const reprocessRepos = async () => {
 };
 
 const parseDependenciesTask = async () => {
-	setLanguageRepoProcessor(supportedLanguages.JavaScript, parseTSJSDependencies);
-	setLanguageRepoProcessor(supportedLanguages.TypeScript, parseTSJSDependencies);
-	setLanguageRepoProcessor(supportedLanguages.Python, parsePythonDependencies);
-	setLanguageRepoProcessor(supportedLanguages.CSharp, parseCSharpDependencies);
+	setDependencyParserForLang(supportedLanguages.JavaScript, parseTSJSDependencies);
+	setDependencyParserForLang(supportedLanguages.TypeScript, parseTSJSDependencies);
+	setDependencyParserForLang(supportedLanguages.Python, parsePythonDependencies);
+	setDependencyParserForLang(supportedLanguages.CSharp, parseCSharpDependencies);
 
 	while (true) {
 		try {
-			await processUnprocessedRepos();
-			await reprocessRepos();
+			await processNewRepos();
+			await reprocessOldRepos();
 			await sleep(REPO_CRAWL_TASK_RUN_INTERVAL);
 		} catch (error) {
 			console.error(error);
@@ -218,5 +233,5 @@ const parseDependenciesTask = async () => {
 	}
 };
 
-export { reprocessRepos, processUnprocessedRepos };
+export { reprocessOldRepos as reprocessRepos, processNewRepos as processUnprocessedRepos };
 export default parseDependenciesTask;

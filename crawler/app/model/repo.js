@@ -64,9 +64,9 @@ class Repo {
 	 * @param {number} count - Number of repositories to fetch
 	 * @returns {Promise<Repo[]>}
 	 */
-	static async getReposToReprocess({ minDate, idCursor = 0, count = 50 }) {
-		if (!minDate || !(minDate instanceof Date)) {
-			throw new Error('minDate must be a valid Date object');
+	static async getReposToReprocess({ maxDate, idCursor = 0, count = 50 }) {
+		if (!maxDate || !(maxDate instanceof Date)) {
+			throw new Error('maxDate must be a valid Date object');
 		}
 
 		const results = await prisma.repo.findMany({
@@ -75,7 +75,7 @@ class Repo {
 					gt: idCursor,
 				},
 				packageProcessedAt: {
-					lt: minDate,
+					lt: maxDate,
 				},
 			},
 			take: count,
