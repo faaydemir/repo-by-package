@@ -199,29 +199,32 @@ export default function Home({ providerId }: Props) {
 						{state.selectedPackages?.length > 0 ? (
 							<>
 								<div className="flex flex-wrap items-center justify-between gap-2 py-2">
-									<div className="text-xs font-semibold text-gray-600">
-										{state.totalRepoCount ?? 0} project
-										{state.totalRepoCount !== 1 ? 's' : ''} found
+									<div className="flex flex-row gap-3 text-xs font-semibold text-gray-600">
+										<span>{state.repoAndProjectCount?.repoCount ?? 0} Repo</span>
+										<span> {state.repoAndProjectCount?.projectCount} Project</span>
 									</div>
+
 									<div className="flex gap-2">
 										<SortButton label="Stars" type="stars" activeSort={state.repoSort} onClick={handleSort} />
 										<SortButton label="Updated" type="updatedAt" activeSort={state.repoSort} onClick={handleSort} />
 									</div>
-
 								</div>
 
-								<div className="space-y-4 md:space-y-5 relative">
+								<div className="relative space-y-4 md:space-y-5">
 									{state.repositories.map((repo, i) => (
-										<RepositoryCard key={i} repository={repo}
+										<RepositoryCard
+											key={i}
+											repository={repo}
 											selectedPackages={state.selectedPackages}
-											onPackageClick={handlePackageSelect} />
+											onPackageClick={handlePackageSelect}
+										/>
 									))}
 								</div>
 
 								<div className="overflow-x-auto py-4">
 									<PaginationView
 										pagination={state.repoPagination}
-										total={state.totalRepoCount ?? 0}
+										total={state.repoAndProjectCount?.projectCount ?? 0}
 										onPaginationChange={handlePagination}
 									/>
 								</div>

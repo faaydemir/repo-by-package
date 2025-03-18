@@ -73,22 +73,25 @@ export interface SearchPackageRequest {
 	provider?: string;
 	take?: number;
 }
-
-export type LanguageStat = {
+export interface RepoAndProjectCount {
+	repoCount: number;
+	projectCount: number;
+}
+export interface LanguageStat {
 	language: string;
 	projectCount: number;
-};
+}
 
-export type DependencyCount = {
+export interface DependencyCount {
 	name: string;
 	count: number;
-};
-export type ProviderStats = {
+}
+export interface ProviderStats {
 	name: string;
 	dependencyCount: number;
 	repoCount: number;
 	topDependencies: DependencyCount[];
-};
+}
 
 interface RepositoryResponseItems {
 	id: number;
@@ -165,7 +168,7 @@ const searchRepositories = async (request: RepositoryFilter): Promise<Repository
 	return mergeRepositoriesByProject(data ?? []);
 };
 
-const countRepositories = async (request: RepositoryCountFilter): Promise<number> => {
+const countRepositories = async (request: RepositoryCountFilter): Promise<RepoAndProjectCount> => {
 	const { data, error } = await supabase.rpc('count_repositories', {
 		p_packageids: request.packageIds ?? [],
 	});
@@ -174,7 +177,7 @@ const countRepositories = async (request: RepositoryCountFilter): Promise<number
 		throw new Error(error.message);
 	}
 
-	return data;
+	return data?.[0] as RepoAndProjectCount;
 };
 
 const searchPackagesById = async (packageIds: number[]): Promise<PackageWithDetails[]> => {
@@ -230,6 +233,8 @@ const getProviderStats = async (): Promise<ProviderStats[]> => {
 		throw new Error(error.message);
 	}
 	data.sort((a, b) => b.repoCount - a.repoCount);
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	//@ts-expect-error
 	return data.filter((stat) => appInfo.supportedProviders.includes(stat.name)) as ProviderStats[];
 };
 

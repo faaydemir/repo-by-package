@@ -30,20 +30,20 @@ export const searchRepositories = async (
 ) => {
 	try {
 		if (!searchParams?.packageIds?.length) {
-			setState((prev) => ({ ...prev, repositories: [], totalRepoCount: 0 }));
+			setState((prev) => ({ ...prev, repositories: [], repoAndProjectCount: { repoCount: 0, projectCount: 0 } }));
 			return;
 		}
 		setState((prev) => ({ ...prev, isReposLoading: true }));
 		const currentOperationIndex: number = ++lastSearchRepositoriesIndex;
 
-		const [repositories, totalRepoCount] = await Promise.all([
+		const [repositories, counts] = await Promise.all([
 			client.searchRepositories(searchParams),
 			client.countRepositories(searchParams), //TODO: get total count only if selected packages have changed
 		]);
 
 		if (currentOperationIndex !== lastSearchRepositoriesIndex) return;
 
-		setState((prev) => ({ ...prev, repositories, totalRepoCount }));
+		setState((prev) => ({ ...prev, repositories, repoAndProjectCount: counts }));
 	} catch (error) {
 		setState((prev) => ({ ...prev, error: (error as Error).message ?? error }));
 	} finally {

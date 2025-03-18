@@ -51,7 +51,10 @@ export type Database = {
         Args: {
           p_packageids: number[]
         }
-        Returns: number
+        Returns: {
+          repoCount: number
+          projectCount: number
+        }[]
       }
       get_all_provider_stats: {
         Args: Record<PropertyKey, never>

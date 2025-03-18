@@ -1,4 +1,12 @@
-import { Package, PackageWithDetails, Pagination, ProviderStats, Repository, Sort } from '@/client';
+import {
+	Package,
+	PackageWithDetails,
+	Pagination,
+	ProviderStats,
+	RepoAndProjectCount,
+	Repository,
+	Sort,
+} from '@/client';
 
 export interface AppInfo {
 	name: string;
@@ -12,7 +20,7 @@ export interface State {
 	selectedPackages: Package[];
 	selectedProvider?: string;
 	repositories: Repository[];
-	totalRepoCount?: number;
+	repoAndProjectCount?: RepoAndProjectCount;
 	repoSort: Sort;
 	repoPagination: Pagination;
 	isReposLoading: boolean;
