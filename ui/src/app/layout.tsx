@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/layout/Header';
 import appInfo from '@/constant/appInfo';
+import Footer from '@/components/layout/Footer';
 
 const inter = Inter({
 	subsets: ['latin'],
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 			<body className="min-h-screen bg-gray-50 font-sans antialiased">
 				<Header />
 				<main className="mx-auto max-w-7xl">{children}</main>
+				<Footer />
 			</body>
 		</html>
 	);
