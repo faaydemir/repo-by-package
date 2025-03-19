@@ -4,6 +4,7 @@ import './globals.css';
 import Header from '@/components/layout/Header';
 import appInfo from '@/constant/appInfo';
 import Footer from '@/components/layout/Footer';
+import Script from 'next/script';
 
 const inter = Inter({
 	subsets: ['latin'],
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 				<Header />
 				<main className="mx-auto max-w-7xl">{children}</main>
 				<Footer />
+				<Script async src="https://scripts.simpleanalyticscdn.com/latest.js"></Script>
 			</body>
 		</html>
 	);
