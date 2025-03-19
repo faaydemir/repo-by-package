@@ -154,7 +154,7 @@ export default function Home({ providerId }: Props) {
 	}, []);
 
 	return (
-		<div className="m-0 md:my-8 md:mb-0 md:mt-6">
+		<div className="m-0 md:mx-6 md:mb-0 md:mt-6">
 			<div className="absolute right-0 top-0 z-10 flex h-12 w-12 items-center p-2 md:hidden">
 				<button
 					onClick={toggleSidebar}
