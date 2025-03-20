@@ -8,6 +8,7 @@ import supportedLanguages from './supported-languages.js';
 import { parseTSJSDependencies } from './depdendency-parser/js-ts-dependency-parser.js';
 import { parsePythonDependencies } from './depdendency-parser/python-dependency-parser.js';
 import { parseCSharpDependencies } from './depdendency-parser/csharp-dependency-parser.js';
+import { parseSwiftDependencies } from './depdendency-parser/swift-dependency-parser.js';
 import { REPO_CRAWL_TASK_RUN_INTERVAL, REPO_REPROCESS_INTERVAL_DAYS } from './constants.js';
 import sleep from './sleep.js';
 import prisma from './prisma.js';
@@ -220,7 +221,8 @@ const parseDependenciesTask = async () => {
 	setDependencyParserForLang(supportedLanguages.TypeScript, parseTSJSDependencies);
 	setDependencyParserForLang(supportedLanguages.Python, parsePythonDependencies);
 	setDependencyParserForLang(supportedLanguages.CSharp, parseCSharpDependencies);
-
+	setDependencyParserForLang(supportedLanguages.Swift, parseSwiftDependencies);
+	
 	while (true) {
 		try {
 			await processNewRepos();
