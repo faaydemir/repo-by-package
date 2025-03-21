@@ -12,8 +12,9 @@ interface RepositoryCardProps {
 }
 
 function getGithubSearchUrl(pkg: Package, repo: string, folder: string): string | undefined {
+	const seachableProviders = new Set(['npm', 'pypi']);
 	//TODO: maybe move this to client ?
-	if (pkg.provider === 'nuget') return;
+	if (!seachableProviders.has(pkg.provider)) return undefined;
 	//TODO: fix for npm package path delete when project path is correctly setted on parsing
 	if (folder && folder.endsWith('package.json')) {
 		folder = folder.replace('package.json', '');
