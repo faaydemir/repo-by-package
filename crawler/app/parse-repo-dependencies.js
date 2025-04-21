@@ -218,6 +218,7 @@ const reprocessOldRepos = async () => {
 const parseDependenciesTask = async () => {
 	setDependencyParserForLang(supportedLanguages.JavaScript, parseTSJSDependencies);
 	setDependencyParserForLang(supportedLanguages.TypeScript, parseTSJSDependencies);
+	setDependencyParserForLang(supportedLanguages.Vue, parseTSJSDependencies);
 	setDependencyParserForLang(supportedLanguages.Python, parsePythonDependencies);
 	setDependencyParserForLang(supportedLanguages.CSharp, parseCSharpDependencies);
 

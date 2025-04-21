@@ -10,6 +10,7 @@ datasource db {
 }
 
 model Repo {
+  id                 Int              @id @default(autoincrement())
   githubId           BigInt?          @unique
   owner              String
   name               String
@@ -34,7 +35,6 @@ model Repo {
   insertedAt         DateTime         @default(now())
   packageProcessedAt DateTime?
   processible        Boolean          @default(true)
-  id                 Int              @id @default(autoincrement())
   repoRependencies   RepoDependency[]
 
   @@schema("private")

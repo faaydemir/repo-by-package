@@ -3,6 +3,7 @@ const supportedLanguages = {
 	JavaScript: 'JavaScript',
 	TypeScript: 'TypeScript',
 	Python: 'Python',
+	Vue: 'Vue',
 };
 
 export default supportedLanguages;
