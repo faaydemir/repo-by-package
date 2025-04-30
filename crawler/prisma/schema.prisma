@@ -65,15 +65,11 @@ model Dependency {
 }
 
 model DependencyMapping {
-  version          String?
   insertedAt       DateTime       @default(now())
-  versionText      String?
   dependencyType   String?
   id               Int            @id @default(autoincrement())
   dependencyId     Int
   repoDependencyId Int
-  maxVersion       String?
-  minVersion       String?
   dependency       Dependency     @relation(fields: [dependencyId], references: [id])
   repoDependency   RepoDependency @relation(fields: [repoDependencyId], references: [id])
 

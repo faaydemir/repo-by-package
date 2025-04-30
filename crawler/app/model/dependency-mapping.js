@@ -5,10 +5,6 @@ class DependencyMapping {
 		this.id = data.id;
 		this.repoDependencyId = data.repoDependencyId;
 		this.dependencyId = data.dependencyId;
-		this.version = data.version;
-		this.minVersion = data.minVersion;
-		this.maxVersion = data.maxVersion;
-		this.versionText = data.versionText;
 		this.dependencyType = data.dependencyType;
 		this.insertedAt = data.insertedAt;
 	}

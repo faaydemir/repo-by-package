@@ -104,10 +104,6 @@ const saveRepoDependencyList = async (repoDependencyList) => {
 				return new DependencyMapping({
 					repoId: repoDependencyList.id,
 					dependencyId: dependency.id,
-					version: dep.version,
-					minVersion: dep.minVersion,
-					maxVersion: dep.maxVersion,
-					versionText: dep.versionText,
 				});
 			}),
 		);

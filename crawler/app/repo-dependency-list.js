@@ -12,13 +12,9 @@ export class RepoDependencyList {
 	}
 }
 export class RepoDependency {
-	constructor({ name, provider, version, minVersion, maxVersion, versionText }) {
+	constructor({ name, provider }) {
 		this.provider = provider;
 		this.name = name;
-		this.version = version;
-		this.minVersion = minVersion;
-		this.maxVersion = maxVersion;
-		this.versionText = versionText;
 	}
 }
 

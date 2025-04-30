@@ -3,6 +3,7 @@ import { Project, RepoDependency, RepoDependencyList, UnprocessableRepoError } f
 import semver from 'semver';
 
 /**
+ * @deprecated verison parsing not worked for all cases so not used in ui, so do not need to store in db
  * Parses version text and returns version info including min and max versions
  * @param {string} version
  * @returns {{version: string, minVersion: string, maxVersion: string}}
@@ -119,14 +120,9 @@ export const parseDependenciesFromPackageJson = (packageJson) => {
 
 	return Object.entries(allDependencies).map(([name, version]) => {
 		const provider = 'npm';
-		const parsedVersion = parseVersionText(version);
 		return new RepoDependency({
 			name,
 			provider,
-			versionText: version,
-			version: parsedVersion.version,
-			minVersion: parsedVersion.minVersion,
-			maxVersion: parsedVersion.maxVersion,
 		});
 	});
 };

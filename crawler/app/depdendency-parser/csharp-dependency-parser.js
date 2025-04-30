@@ -3,6 +3,7 @@ import { Project, RepoDependency, RepoDependencyList, UnprocessableRepoError } f
 import semver from 'semver';
 
 /**
+ * @deprecated verison parsing not worked for all cases so not used in ui, so do not need to store in db
  * Parses version text from NuGet package references and returns version info including min and max versions
  * @param {string} version
  * @returns {{version: string, minVersion: string, maxVersion: string}}
@@ -76,36 +77,28 @@ export const parseDependenciesFromCsproj = (content) => {
 	// Match inline package references
 	let match;
 	while ((match = packageRefPattern.exec(content)) !== null) {
-		const [, name, version] = match;
+		const [, name] = match;
 		const provider = 'nuget';
-		const parsedVersion = parseNuGetVersionText(version);
+		// const parsedVersion = parseNuGetVersionText(version);
 
 		dependencies.push(
 			new RepoDependency({
 				name,
 				provider,
-				versionText: version ?? '',
-				version: parsedVersion.version,
-				minVersion: parsedVersion.minVersion,
-				maxVersion: parsedVersion.maxVersion,
 			}),
 		);
 	}
 
 	// Match metadata-style package references
 	while ((match = packageMetaPattern.exec(content)) !== null) {
-		const [, name, version] = match;
+		const [, name] = match;
 		const provider = 'nuget';
-		const parsedVersion = parseNuGetVersionText(version);
+		// const parsedVersion = parseNuGetVersionText(version);
 
 		dependencies.push(
 			new RepoDependency({
 				name,
 				provider,
-				versionText: version,
-				version: parsedVersion.version,
-				minVersion: parsedVersion.minVersion,
-				maxVersion: parsedVersion.maxVersion,
 			}),
 		);
 	}
@@ -124,18 +117,14 @@ export const parseDependenciesFromPackagesConfig = (content) => {
 
 	let match;
 	while ((match = packagePattern.exec(content)) !== null) {
-		const [, name, version] = match;
+		const [, name] = match;
 		const provider = 'nuget';
-		const parsedVersion = parseNuGetVersionText(version);
+		// const parsedVersion = parseNuGetVersionText(version);
 
 		dependencies.push(
 			new RepoDependency({
 				name,
 				provider,
-				versionText: version,
-				version: parsedVersion.version,
-				minVersion: parsedVersion.minVersion,
-				maxVersion: parsedVersion.maxVersion,
 			}),
 		);
 	}

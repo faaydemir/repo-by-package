@@ -5,6 +5,7 @@ import semver from 'semver';
 import * as itoml from '@iarna/toml';
 
 /**
+ * @deprecated verison parsing not worked for all cases so not used in ui, so do not need to store in db
  * Parses Python requirements.txt version specifications into version constraints
  * @param {string} versionText Version specifier (e.g., ">=2.0,<3.0")
  * @returns {Object} Parsed version constraints
@@ -126,16 +127,11 @@ export const parseRequirementsContent = (content) => {
 		if (!match) continue;
 
 		const [, name, versionSpec] = match;
-		const parsed = parseDependencyVersionTextRequirementTxt(versionSpec);
 
 		dependencies.push(
 			new RepoDependency({
 				name: name.trim(),
 				provider: 'pypi',
-				versionText: versionSpec.trim(),
-				version: parsed.version,
-				minVersion: parsed.minVersion,
-				maxVersion: parsed.maxVersion,
 			}),
 		);
 	}
@@ -152,7 +148,6 @@ export const parseRequirementsContent = (content) => {
  */
 const parseTomlDependencyText = (dependencyText) => {
 	let name;
-	let versionText = '';
 	try {
 		// Handle dependencies with URLs (e.g., "mmyolo @ git+...")
 		if (dependencyText.includes('@')) {
@@ -160,7 +155,6 @@ const parseTomlDependencyText = (dependencyText) => {
 			return new RepoDependency({
 				name,
 				provider: 'pypi',
-				versionText: source ?? '',
 			});
 		}
 
@@ -168,28 +162,18 @@ const parseTomlDependencyText = (dependencyText) => {
 			? dependencyText.split(/([<>=!@^]+)/, 2).map((s) => s.trim())
 			: [dependencyText.trim(), null];
 		if (!name) return null;
-		versionText = dependencyText.replace(name, '').trim();
-		if (!versionText) return new RepoDependency({ name, provider: 'pypi', versionText });
-
-		const range = semver.validRange(versionText);
-		const version = semver.valid(versionText);
-		const minVersion = range ? semver.minVersion(range)?.version || null : null;
-		const maxVersion = range ? semver.maxSatisfying([versionText], range) || null : null;
 
 		return new RepoDependency({
 			name,
 			provider: 'pypi',
-			versionText,
-			version,
-			minVersion,
-			maxVersion,
 		});
 	} catch (error) {
 		console.error(`Failed to parse dependency text: ${dependencyText}`, error);
-		return new RepoDependency({ name, provider: 'pypi', versionText });
+		return new RepoDependency({ name, provider: 'pypi' });
 	}
 };
 /**
+ * @deprecated verison parsing not worked for all cases so not used in ui, so do not need to store in db
  * Parse dependency version text and return version, minVersion, maxVersion.
  * Supports formats like: ">=1.26.0,<3.0.0", "^1.62.3", "!=1.65.0", "^13.5.0", "^2.31.0", ">=3.9,<3.13".
  * If parsing fails, returns { version: null, minVersion: null, maxVersion: null }.
@@ -269,30 +253,14 @@ export const parsePyprojectContent = (content) => {
 						dependencies = [...dependencies, ...obj[key].map(parseTomlDependencyText)];
 					} else if (typeof obj[key] === 'object') {
 						for (const name in obj[key]) {
-							let versionText = obj[key][name];
 							if (name === 'python') continue;
 							if (name === 'file') continue;
 							if (name === 'path') continue;
-							let parsedVersion = {};
-							// if versionText is object check its contains version key
-							if (typeof versionText === 'object' && versionText.version) {
-								versionText = versionText.version;
-							}
-							// if versionText is string then parse it
-							if (typeof versionText === 'string') {
-								parsedVersion = parseDependencyVersionText(versionText);
-							} else {
-								versionText = '';
-							}
 
 							dependencies.push(
 								new RepoDependency({
 									name,
 									provider: 'pypi',
-									versionText,
-									version: parsedVersion.version,
-									minVersion: parsedVersion.minVersion,
-									maxVersion: parsedVersion.maxVersion,
 								}),
 							);
 						}
