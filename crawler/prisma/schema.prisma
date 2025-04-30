@@ -65,8 +65,6 @@ model Dependency {
 }
 
 model DependencyMapping {
-  insertedAt       DateTime       @default(now())
-  dependencyType   String?
   id               Int            @id @default(autoincrement())
   dependencyId     Int
   repoDependencyId Int

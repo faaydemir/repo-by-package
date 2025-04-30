@@ -5,8 +5,6 @@ class DependencyMapping {
 		this.id = data.id;
 		this.repoDependencyId = data.repoDependencyId;
 		this.dependencyId = data.dependencyId;
-		this.dependencyType = data.dependencyType;
-		this.insertedAt = data.insertedAt;
 	}
 
 	static async getById(id) {
