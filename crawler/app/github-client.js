@@ -213,7 +213,7 @@ async function getFileContents(owner, repo, filePatterns) {
 
 		for (const pattern of filePatterns) {
 			if (!pattern.includes('*')) {
-				if (item.path.toLowerCase() === pattern.toLowerCase()) {
+				if (item.path.toLowerCase().endsWith(pattern.toLowerCase())) {
 					matchingFiles.push(item);
 				}
 				continue;
