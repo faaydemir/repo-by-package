@@ -35,8 +35,6 @@ export interface Repository {
 	icon?: string;
 	fullName: string;
 	description?: string;
-	owner: string;
-	name: string;
 	topics: string;
 	language: string;
 	url: string;
@@ -95,15 +93,11 @@ export interface ProviderStats {
 
 interface RepositoryResponseItems {
 	id: number;
-	githubId: number;
 	repositoryDependencyId: number;
 	path: string;
 	packageProvider: string;
-	owner: string;
-	name: string;
 	fullName: string;
 	defaultBranch: string;
-	url: string;
 	description: string;
 	language: string;
 	topics: string;
@@ -112,8 +106,13 @@ interface RepositoryResponseItems {
 	packages: Package[];
 }
 
+const getRepoUrl = (repo: RepositoryResponseItems): string => {
+	return `www.github.com/${repo.fullName}`;
+};
+
 const getFolderUrlFromPath = (repo: RepositoryResponseItems): string => {
-	return `${repo.url}/blob/${repo.defaultBranch}/${repo.path}`;
+	const url = getRepoUrl(repo);
+	return `${url}/blob/${repo.defaultBranch}/${repo.path}`;
 };
 
 const mergeRepositoriesByProject = (repositoryResponses: RepositoryResponseItems[]): Repository[] => {
@@ -125,11 +124,9 @@ const mergeRepositoriesByProject = (repositoryResponses: RepositoryResponseItems
 				id: repo.id,
 				fullName: repo.fullName,
 				description: repo.description,
-				owner: repo.owner,
-				name: repo.name,
 				topics: repo.topics,
 				language: repo.language,
-				url: repo.url,
+				url: getRepoUrl(repo),
 				stars: repo.stars,
 				updatedAt: new Date(repo.updatedAt),
 				projects: [],
@@ -151,7 +148,7 @@ const mergeRepositoriesByProject = (repositoryResponses: RepositoryResponseItems
 };
 
 const searchRepositories = async (request: RepositoryFilter): Promise<Repository[]> => {
-	const { data, error } = await supabase.rpc('search_repositories', {
+	const { data, error } = await supabase.rpc('search_repositories_v2', {
 		p_packageids: request.packageIds ?? [],
 		p_page: request.pagination?.page ?? 1,
 		p_per_page: request.pagination?.perPage ?? 100,
