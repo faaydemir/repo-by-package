@@ -107,7 +107,7 @@ interface RepositoryResponseItems {
 }
 
 const getRepoUrl = (repo: RepositoryResponseItems): string => {
-	return `www.github.com/${repo.fullName}`;
+	return `https://github.com/${repo.fullName}`;
 };
 
 const getFolderUrlFromPath = (repo: RepositoryResponseItems): string => {
