@@ -12,6 +12,7 @@ import { REPO_CRAWL_TASK_RUN_INTERVAL, REPO_REPROCESS_INTERVAL_DAYS } from './co
 import sleep from './sleep.js';
 import prisma from './prisma.js';
 import DependencyParseTaskRun from './model/dependency-parse-task-run.js';
+import { parseGoDependencies } from './dependency-parser/go-dependency-parser.js';
 
 const REPO_TAKE_COUNT = 5;
 const PROCESS_STATE = {
@@ -212,6 +213,7 @@ const reprocessOldRepos = async () => {
 };
 
 const parseDependenciesTask = async () => {
+	setDependencyParserForLang(supportedLanguages.Go, parseGoDependencies);
 	setDependencyParserForLang(supportedLanguages.JavaScript, parseTSJSDependencies);
 	setDependencyParserForLang(supportedLanguages.TypeScript, parseTSJSDependencies);
 	setDependencyParserForLang(supportedLanguages.Vue, parseTSJSDependencies);
