@@ -1,11 +1,7 @@
 import axios from 'axios';
-import { LEAST_START_COUNT_FOR_REPO } from './constants.js';
+import { GITHUB_TOKEN, LEAST_START_COUNT_FOR_REPO } from './constants.js';
 
-// Retrieve your GitHub token from the environment variables
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-if (!GITHUB_TOKEN) {
-	console.error('Please set the GITHUB_TOKEN environment variable.');
-}
+
 
 // Create an Axios instance with GitHub API defaults
 const github = axios.create({
@@ -13,7 +9,7 @@ const github = axios.create({
 	headers: {
 		Authorization: `Bearer ${GITHUB_TOKEN}`,
 		Accept: 'application/vnd.github.v3+json',
-	},
+	},	
 });
 
 //TODO: add repo properties
