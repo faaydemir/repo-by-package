@@ -1,18 +1,86 @@
 import githubClient from "../github-client.js";
 import Repo from "../model/repo.js";
 import { Project, RepoDependencyList, RepoDependency, UnprocessableRepoError } from "../repo-dependency-list.js";
+import peggy from 'peggy';
 
 const GO_PROVIDER = 'go';
+
+/* PEG grammar for parse reuired dependencies ignore other declarations. ! Mostly works but not all cases */
+const GO_REQUIRE_PEG_GRAMMER = `GoMod         = (Directive / Newline )* End
+Directive     = RequireDecl / OtherDecl
+
+RequireDecl   = "require" Break ( "(" RequireSpecLine* ")" / RequireSpec)
+RequireSpecLine = BreakOptional (CommentLine / RequireSpec) BreakOptional
+
+RequireSpec = mp:ModulePath Space v:Version c:CommentLine? { 
+  return { type: "RequireSpec", module: mp, version: v, comment: c ?? null }; 
+}
+OtherDecl     = [^\\n]* Newline
+
+ModulePath    = AnyText
+Version       = AnyText
+CommentLine   = SpaceOptional Comment End
+Comment       = "//" [^\\n]*
+AnyText       = TextChar+ / StringLiteral
+StringLiteral      = DoubleQuoteString / SingleQuoteString
+DoubleQuoteString  = '"' TextChar* '"'
+SingleQuoteString  = "'" TextChar* "'"
+TextChar           = [a-zA-Z0-9./\\\-_~!@#$%^&*()+=:;'"?,<>[\\]{}|]
+Break              = [ \\t\\r\\n]+
+BreakOptional      = [ \\t\\r\\n]*
+Space              = [ \\t]+
+SpaceOptional      = [ \\t]*
+Newline       = "\\n"
+End       = Eof / Newline
+Eof           = !.
+`;
+
+
+let goRequirementParser = null;
+
+/**
+ * @param {*} ast 
+ * @returns {Array<{name: string, version: string}>}
+ */
+const findRequireSpec = (ast) => {
+    let specs = [];
+
+    if (Array.isArray(ast)) {
+        for (const item of ast) {
+            specs = specs.concat(findRequireSpec(item));
+        }
+    } else if (ast && ast.type === "RequireSpec") {
+        // Convert module and version arrays to strings and format the result
+        specs.push({
+            name: Array.isArray(ast.module) ? ast.module.join('') : ast.module,
+            version: Array.isArray(ast.version) ? ast.version.join('') : ast.version
+        });
+    }
+    return specs;
+}
 
 /**
  * @param {String} goFileContent 
  * @returns {RepoDependency[]} 
  */
-const parseGoModFileContent = (goFileContent) => {
+export const parseGoModFileContent = (goFileContent) => {
     if (!goFileContent) {
         return [];
     }
-    throw new Error('Not implemented');
+    if (!goRequirementParser) {
+        goRequirementParser = peggy.generate(GO_REQUIRE_PEG_GRAMMER)
+    }
+
+    const parsed = goRequirementParser.parse(goFileContent);
+    const dependencies = findRequireSpec(parsed);
+    const repoDependencies = dependencies.map((dep) => {
+        return new RepoDependency({
+            name: dep.name,
+            provider: GO_PROVIDER,
+        });
+    });
+
+    return repoDependencies;
 }
 
 /**
@@ -33,7 +101,6 @@ export const parseGoDependencies = async (repo) => {
     }
 
     for (const file of allFiles) {
-
         const fileFolder = file.path.split('/').slice(0, -1).join('/');
         const dependencies = parseGoModFileContent(file.content);
         dependencyList.projects.push(
