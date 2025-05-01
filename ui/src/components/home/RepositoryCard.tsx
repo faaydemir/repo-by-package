@@ -70,7 +70,7 @@ function formatDate(date: Date): string {
 }
 
 export function RepositoryCard({ repository, selectedPackages, onPackageClick }: RepositoryCardProps) {
-	const { fullName, topics, description, language, url, stars, updatedAt, projects } = repository;
+	const { name, topics, description, language, url, stars, updatedAt, projects } = repository;
 
 	const [showAllProjects, setShowAllProjects] = useState<boolean>(false);
 	const [extenedPackages, setExtendedPackages] = useState<Record<number, boolean>>({});
@@ -91,7 +91,7 @@ export function RepositoryCard({ repository, selectedPackages, onPackageClick }:
 			<div className="flex items-center justify-between pb-0.5">
 				<div className="flex items-center gap-2">
 					<Link href={url} target="_blank" className="text-md hover:gray-blue-600 font-semibold text-gray-900">
-						{fullName}
+						{name}
 					</Link>
 					{<TechIcon tech={language} size="xs" />}
 				</div>

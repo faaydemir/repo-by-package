@@ -34,6 +34,7 @@ export interface Repository {
 	id: number;
 	icon?: string;
 	fullName: string;
+	name: string;
 	description?: string;
 	topics: string;
 	language: string;
@@ -119,10 +120,12 @@ const mergeRepositoriesByProject = (repositoryResponses: RepositoryResponseItems
 	const id_to_repository: Record<number, Repository> = {};
 	const repositories: Repository[] = [];
 	repositoryResponses.forEach((repo) => {
+		const [, repoName] = repo.fullName.split('/');
 		if (!id_to_repository[repo.id]) {
 			id_to_repository[repo.id] = {
 				id: repo.id,
 				fullName: repo.fullName,
+				name: repoName,
 				description: repo.description,
 				topics: repo.topics,
 				language: repo.language,
