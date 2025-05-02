@@ -1,19 +1,15 @@
-// filepath: /Users/fatihaydemir/Desktop/CodeRead/repo-by-package/crawler/app/dependency-parser/java-dependency-parser.js
 import githubClient from '../github-client.js';
 import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from '../repo-dependency-list.js';
 import { XMLParser } from 'fast-xml-parser'; // This dependency needs to be added to package.json
-import fs from 'fs';
-import path from 'path';
-import peggy from 'peggy';
-
-const JAVA_PROVIDER = 'maven';
+import * as gparser from 'gradle-to-js';
+const JAVA_PROVIDER = 'java';
 
 const GRADLE_DEPENDENCY_GRAMMAR = `
-GradleFile = (CommentLine / DependenciesBlock /OtherDecl)*
+GradleFile = (CommentLine / DependenciesBlock /OtherDecl)* OtherDeclEnd?
 
-DependenciesBlock = "dependencies" SpaceOptional? "{" BlockContent "}"
+DependenciesBlock = SpaceOptional? "dependencies" SpaceOptional? "{" BlockContent "}"
 
-BlockContent = ((CommentLine / DependencyLine) BreakOptional)*
+BlockContent = ((CommentLine / FileTreeLine / DependencyLine / OtherDeclExpectParanthesis) BreakOptional)*
 
 DependencyLine = BreakOptional config:ConfigName Space+ dep:DependencySpec Newline {
       return { type: "Dependency", config, spec: dep };
@@ -27,10 +23,14 @@ QuotedDependencySpec
   = "'" (!"'" .)* "'" { return text(); }
   / '"' (!'"' .)* '"' { return text(); }
 
+OtherDeclExpectParanthesis = !InvalidParensLine [^\\n]* Newline
+
+InvalidParensLine = [^{}]* ("}" / "{") .*
+
 MavenCoordinates = (![\\s{}'"] .)+ { return text(); }
-
+FileTreeLine  = BreakOptional ConfigName Space+ "fileTree" [^\\n]* Newline
 OtherDecl     = [^\\n]* Newline
-
+OtherDeclEnd  = [^\\n]* Eof
 ModulePath    = AnyText
 Version       = AnyText
 CommentLine   = SpaceOptional Comment End
@@ -48,16 +48,6 @@ Newline       = "\\n"
 End       = Eof / Newline
 Eof           = !.
 `
-const writeTestFile = (folder, fileName, content) => {
-
-  const testFilesDir = path.join(process.cwd(), 'test_files', folder);
-  if (!fs.existsSync(testFilesDir)) {
-    fs.mkdirSync(testFilesDir, { recursive: true });
-  }
-  const filePath = path.join(testFilesDir, fileName);
-  fs.writeFileSync(filePath, content, 'utf8');
-  return filePath;
-}
 
 /**
  * Parses dependencies from pom.xml file content using proper XML parsing
@@ -66,7 +56,7 @@ const writeTestFile = (folder, fileName, content) => {
  */
 export const parsePomXmlContent = (content) => {
     const dependencies = [];
-    
+
     try {
         // Create XML parser with appropriate options
         const parser = new XMLParser({
@@ -76,32 +66,32 @@ export const parsePomXmlContent = (content) => {
                 return name === 'dependency' || jpath === 'project.dependencies.dependency';
             }
         });
-        
+
         // Parse the XML content
         const pomObj = parser.parse(content);
-        
+
         // Extract dependencies from the parsed object
         // Handle the different possible structures of the parsed POM
-        const projectDependencies = 
-            pomObj?.project?.dependencies?.dependency || 
-            pomObj?.dependencies?.dependency || 
+        const projectDependencies =
+            pomObj?.project?.dependencies?.dependency ||
+            pomObj?.dependencies?.dependency ||
             [];
-            
+
         // Ensure we have an array to work with
         const dependencyArray = Array.isArray(projectDependencies) ? projectDependencies : [projectDependencies];
-        
+
         for (const dependency of dependencyArray) {
             // Skip if essential fields are missing
             if (!dependency.groupId || !dependency.artifactId) {
                 continue;
             }
-            
+
             const groupId = dependency.groupId;
             const artifactId = dependency.artifactId;
-            
+
             // Maven dependencies are identified by groupId:artifactId format
             const name = `${groupId}:${artifactId}`;
-            
+
             dependencies.push(
                 new RepoDependency({
                     name,
@@ -112,55 +102,52 @@ export const parsePomXmlContent = (content) => {
     } catch (error) {
         console.error(`Failed to parse pom.xml: ${error.message}`);
     }
-    
+
     return dependencies;
 };
 
 /**
  * Parses dependencies from build.gradle file content using PEG grammar
  * @param {string} content - Content of build.gradle file
- * @returns {RepoDependency[]} - List of dependencies
+ * @returns {Promise<RepoDependency[]>} - List of dependencies
  */
-export const parseGradleBuildContent = (content) => {
-    const dependencies = [];
+export const parseGradleBuildContent = async (content) => {
+
+    function findKey(obj, targetKey) {
+        if (typeof obj !== 'object' || obj === null) return undefined;
+
+        if (obj.hasOwnProperty(targetKey)) {
+            return obj[targetKey]; // Or return the key itself if you want just the key
+        }
+
+        for (const key in obj) {
+            const value = obj[key];
+            const result = findKey(value, targetKey);
+            if (result !== undefined) {
+                return result;
+            }
+        }
+
+        return undefined;
+    }
 
     if (!content) {
         return dependencies;
     }
 
-    try {
-        console.log(GRADLE_DEPENDENCY_GRAMMAR);
+    const parsed = await gparser.parseText(content);
+    const dependencies = findKey(parsed, 'dependencies');
+    if (!dependencies) return [];
 
-        // Generate the parser from the PEG grammar
-        const parser = peggy.generate(GRADLE_DEPENDENCY_GRAMMAR);
+    return dependencies.map(d =>
+        new RepoDependency({
+            name: `${d.group}:${d.name}`,
+            provider: JAVA_PROVIDER,
+        })
+    )
 
-        // Parse the content using the generated parser
-        const parsed = parser.parse(content);
+}
 
-        // Extract dependencies from the parsed result
-        const extractDependencies = (node) => {
-            if (Array.isArray(node)) {
-                node.forEach(extractDependencies);
-            } else if (node && node.type === 'Dependency') {
-                const [groupId, artifactId] = node.spec.split(':');
-                if (groupId && artifactId) {
-                    dependencies.push(
-                        new RepoDependency({
-                            name: `${groupId}:${artifactId}`,
-                            provider: JAVA_PROVIDER,
-                        })
-                    );
-                }
-            }
-        };
-
-        extractDependencies(parsed);
-    } catch (error) {
-        console.error(`Failed to parse build.gradle content: ${error.message}`);
-    }
-
-    return dependencies;
-};
 
 /**
  * Parse Java dependencies from a repository
@@ -169,23 +156,18 @@ export const parseGradleBuildContent = (content) => {
  */
 export const parseJavaDependencies = async (repo) => {
     const dependencyList = new RepoDependencyList({ id: repo.id });
-    
+
     // Get Java dependency files from GitHub
     const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, [
         'pom.xml',
         'build.gradle',
         'build.gradle.kts',
     ]);
-    
+
     const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
-    
+
     if (allFiles.length === 0) {
         throw new UnprocessableRepoError('No supported Java dependency files found');
-    }
-    
-    for (const file of allFiles) {
-        const safeFileName = file.path.replace(/[^a-zA-Z0-9_.-]/g, '_');
-        const filePath = writeTestFile('java', safeFileName, file.content);
     }
 
     // Group dependency files by folder
@@ -195,19 +177,19 @@ export const parseJavaDependencies = async (repo) => {
         acc[folder].push(file);
         return acc;
     }, {});
-    
+
     for (const folder in folderToFiles) {
         const files = folderToFiles[folder];
         let dependencies = [];
-    
+
         for (const file of files) {
             if (file.path.endsWith('pom.xml')) {
                 dependencies = [...dependencies, ...parsePomXmlContent(file.content)];
             } else if (file.path.endsWith('build.gradle') || file.path.endsWith('build.gradle.kts')) {
-                dependencies = [...dependencies, ...parseGradleBuildContent(file.content)];
+                dependencies = [...dependencies, ...await parseGradleBuildContent(file.content)];
             }
         }
-        
+
         // Add project with its dependencies to dependency list
         dependencyList.projects.push(
             new Project({
@@ -217,6 +199,6 @@ export const parseJavaDependencies = async (repo) => {
             }),
         );
     }
-    
+
     return dependencyList;
 };
