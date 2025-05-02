@@ -4,51 +4,6 @@ import { XMLParser } from 'fast-xml-parser'; // This dependency needs to be adde
 import * as gparser from 'gradle-to-js';
 const JAVA_PROVIDER = 'java';
 
-const GRADLE_DEPENDENCY_GRAMMAR = `
-GradleFile = (CommentLine / DependenciesBlock /OtherDecl)* OtherDeclEnd?
-
-DependenciesBlock = SpaceOptional? "dependencies" SpaceOptional? "{" BlockContent "}"
-
-BlockContent = ((CommentLine / FileTreeLine / DependencyLine / OtherDeclExpectParanthesis) BreakOptional)*
-
-DependencyLine = BreakOptional config:ConfigName Space+ dep:DependencySpec Newline {
-      return { type: "Dependency", config, spec: dep };
-    }
-
-ConfigName = [a-zA-Z]+
-
-DependencySpec = QuotedDependencySpec / MavenCoordinates
-
-QuotedDependencySpec
-  = "'" (!"'" .)* "'" { return text(); }
-  / '"' (!'"' .)* '"' { return text(); }
-
-OtherDeclExpectParanthesis = !InvalidParensLine [^\\n]* Newline
-
-InvalidParensLine = [^{}]* ("}" / "{") .*
-
-MavenCoordinates = (![\\s{}'"] .)+ { return text(); }
-FileTreeLine  = BreakOptional ConfigName Space+ "fileTree" [^\\n]* Newline
-OtherDecl     = [^\\n]* Newline
-OtherDeclEnd  = [^\\n]* Eof
-ModulePath    = AnyText
-Version       = AnyText
-CommentLine   = SpaceOptional Comment End
-Comment       = "//" [^\\n]*
-AnyText       = TextChar+ / StringLiteral
-StringLiteral      = DoubleQuoteString / SingleQuoteString
-DoubleQuoteString  = '"' TextChar* '"'
-SingleQuoteString  = "'" TextChar* "'"
-TextChar           = [a-zA-Z0-9./\\\-_~!@#$%^&*()+=:;'"?,<>[\\]{}|]
-Break              = [ \\t\\r\\n]+
-BreakOptional      = [ \\t\\r\\n]*
-Space              = [ \\t]+
-SpaceOptional      = [ \\t]*
-Newline       = "\\n"
-End       = Eof / Newline
-Eof           = !.
-`
-
 /**
  * Parses dependencies from pom.xml file content using proper XML parsing
  * @param {string} content - Content of pom.xml file
