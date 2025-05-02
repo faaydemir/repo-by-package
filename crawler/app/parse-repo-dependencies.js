@@ -14,6 +14,7 @@ import prisma from './prisma.js';
 import DependencyParseTaskRun from './model/dependency-parse-task-run.js';
 import { parseGoDependencies } from './dependency-parser/go-dependency-parser.js';
 import { parseJavaDependencies as parseJavaKotlinDependencies } from './dependency-parser/java-kotlin-dependency-parser.js';
+import { parseRubyDependencies } from './dependency-parser/ruby-dependency-parser.js';
 
 const REPO_TAKE_COUNT = 5;
 const PROCESS_STATE = {
@@ -214,6 +215,7 @@ const reprocessOldRepos = async () => {
 };
 
 const parseDependenciesTask = async () => {
+	setDependencyParserForLang(supportedLanguages.Ruby, parseRubyDependencies)
 	setDependencyParserForLang(supportedLanguages.Java, parseJavaKotlinDependencies);
 	setDependencyParserForLang(supportedLanguages.Kotlin, parseJavaKotlinDependencies);
 	setDependencyParserForLang(supportedLanguages.Go, parseGoDependencies);

@@ -16,6 +16,7 @@
 		"transform": {}
 	},
 	"dependencies": {
+		"@faissaloux/gemfile": "^1.1.0",
 		"@iarna/toml": "^2.2.5",
 		"@prisma/client": "^6.3.1",
 		"axios": "^1.7.9",

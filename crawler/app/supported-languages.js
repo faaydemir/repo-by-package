@@ -1,6 +1,7 @@
 const supportedLanguages = {
 	Java: 'Java',
 	Kotlin: 'Kotlin',
+	Ruby:'Ruby',
 	Go: 'Go',
 	CSharp: 'C#',
 	JavaScript: 'JavaScript',
