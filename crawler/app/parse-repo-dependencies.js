@@ -13,6 +13,7 @@ import sleep from './sleep.js';
 import prisma from './prisma.js';
 import DependencyParseTaskRun from './model/dependency-parse-task-run.js';
 import { parseGoDependencies } from './dependency-parser/go-dependency-parser.js';
+import { parseJavaDependencies as parseJavaKotlinDependencies } from './dependency-parser/java-kotlin-dependency-parser.js';
 
 const REPO_TAKE_COUNT = 5;
 const PROCESS_STATE = {
@@ -184,7 +185,7 @@ const processNewRepos = async () => {
 		for (const repo of repos) {
 			try {
 				await parseAndSaveDependencies(repo);
-			} catch {}
+			} catch { }
 		}
 		await taskRun.updateRun(repos[repos.length - 1].id);
 	} while (true);
@@ -213,6 +214,8 @@ const reprocessOldRepos = async () => {
 };
 
 const parseDependenciesTask = async () => {
+	setDependencyParserForLang(supportedLanguages.Java, parseJavaKotlinDependencies);
+	setDependencyParserForLang(supportedLanguages.Kotlin, parseJavaKotlinDependencies);
 	setDependencyParserForLang(supportedLanguages.Go, parseGoDependencies);
 	setDependencyParserForLang(supportedLanguages.JavaScript, parseTSJSDependencies);
 	setDependencyParserForLang(supportedLanguages.TypeScript, parseTSJSDependencies);
