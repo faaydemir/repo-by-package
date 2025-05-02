@@ -73,7 +73,7 @@ async function crawlReposTask() {
 							taskRun.updateRun(taskRun.starCursor, false);
 							page = 1;
 						} else if (error instanceof RateLimitError) {
-							const rateLimitResetTime = error.rateLimitting.rateLimitReset;
+							const rateLimitResetTime = error.rateLimit.rateLimitReset;
 							const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
 							console.error(`${new Date()} - Rate limit exceeded. Waiting for ${remainingTimeInMilliseconds} ms.`);
 							await sleep(remainingTimeInMilliseconds);

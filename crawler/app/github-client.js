@@ -1,15 +1,13 @@
 import axios from 'axios';
 import { GITHUB_TOKEN, LEAST_START_COUNT_FOR_REPO } from './constants.js';
 
-
-
 // Create an Axios instance with GitHub API defaults
 const github = axios.create({
 	baseURL: 'https://api.github.com/',
 	headers: {
 		Authorization: `Bearer ${GITHUB_TOKEN}`,
 		Accept: 'application/vnd.github.v3+json',
-	},	
+	},
 });
 
 //TODO: add repo properties
@@ -35,11 +33,11 @@ class SearchRepoResponse {
 	/**
 	 *
 	 * @param {Repo[]} items
-	 * @param {RateLimit} rateLimitting
+	 * @param {RateLimit} rateLimit
 	 */
-	constructor(items, rateLimitting) {
+	constructor(items, rateLimit) {
 		this.items = items ?? [];
-		this.rateLimitting = rateLimitting;
+		this.rateLimit = rateLimit;
 	}
 }
 
@@ -76,11 +74,11 @@ class RepoLanguages {
 class RateLimitError extends Error {
 	/**
 	 * @param {string} message
-	 * @param {RateLimit} rateLimitting
+	 * @param {RateLimit} rateLimit
 	 */
-	constructor(message, rateLimitting) {
+	constructor(message, rateLimit) {
 		super(message);
-		this.rateLimitting = rateLimitting;
+		this.rateLimit = rateLimit;
 	}
 }
 

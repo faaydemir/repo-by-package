@@ -13,12 +13,12 @@ class RepoCrawTaskRun {
 	}
 
 	checkAndResetRun() {
+		if (!this.lastRunAt) return;
 		const isADayPassedUntilLastRun = new Date() - this.lastRunAt > 1000 * 60 * 60 * 24;
-		if (isADayPassedUntilLastRun) {
+		if (isADayPassedUntilLastRun && this.isCompleted) {
 			this.isCompleted = false;
 			this.starCursor = LEAST_START_COUNT_FOR_REPO - 1;
 		}
-		return this;
 	}
 
 	async updateRun(starCursor, isCompleted) {
@@ -32,6 +32,7 @@ class RepoCrawTaskRun {
 			starCursor: this.starCursor,
 			lastRunAt: this.lastRunAt,
 			isCompleted: this.isCompleted,
+			completedCount: this.completedCount,
 		});
 	}
 

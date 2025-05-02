@@ -158,7 +158,7 @@ const parseAndSaveDependencies = async (repo) => {
 				// await Repo.update(repo.id, { processible: false });
 				processState[language] = PROCESS_STATE.UNPROCESSIBLE;
 			} else if (error instanceof RateLimitError) {
-				const rateLimitResetTime = error.rateLimitting.rateLimitReset;
+				const rateLimitResetTime = error.rateLimit.rateLimitReset;
 				const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
 				await sleep(remainingTimeInMilliseconds);
 			} else {
