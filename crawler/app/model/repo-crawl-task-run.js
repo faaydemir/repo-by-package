@@ -1,7 +1,7 @@
 import { LEAST_START_COUNT_FOR_REPO } from '../constants.js';
 import prisma from '../prisma.js';
 
-class RepoCrawTaskRun {
+class RepoCrawlTaskRun {
 	constructor(data) {
 		this.id = data.id;
 		this.taskKey = data.taskKey;
@@ -28,7 +28,7 @@ class RepoCrawTaskRun {
 		if (isCompleted) {
 			this.completedCount = this.completedCount + 1;
 		}
-		return await RepoCrawTaskRun.update(this.id, {
+		return await RepoCrawlTaskRun.update(this.id, {
 			starCursor: this.starCursor,
 			lastRunAt: this.lastRunAt,
 			isCompleted: this.isCompleted,
@@ -37,38 +37,38 @@ class RepoCrawTaskRun {
 	}
 
 	static async getOrCreateByKey(taskKey) {
-		let taskRun = await RepoCrawTaskRun.getByTaskKey(taskKey);
+		let taskRun = await RepoCrawlTaskRun.getByTaskKey(taskKey);
 		if (!taskRun) {
-			taskRun = await RepoCrawTaskRun.new({ taskKey });
+			taskRun = await RepoCrawlTaskRun.new({ taskKey });
 		}
 		taskRun.checkAndResetRun();
 		return taskRun;
 	}
 
 	static async getByTaskKey(taskKey) {
-		const result = await prisma.repoCrawTaskRun.findFirst({
+		const result = await prisma.repoCrawlTaskRun.findFirst({
 			where: { taskKey },
 			orderBy: { id: 'desc' },
 			take: 1,
 		});
-		return result ? new RepoCrawTaskRun(result) : null;
+		return result ? new RepoCrawlTaskRun(result) : null;
 	}
 
 	/**
 	 *
 	 * @param {string} id
-	 * @param {Partial<RepoCrawTaskRun>} updates
+	 * @param {Partial<RepoCrawlTaskRun>} updates
 	 */
 	static async update(id, updates) {
-		const response = await prisma.repoCrawTaskRun.update({
+		const response = await prisma.repoCrawlTaskRun.update({
 			where: { id },
 			data: updates,
 		});
-		return new RepoCrawTaskRun(response);
+		return new RepoCrawlTaskRun(response);
 	}
 
 	static async new({ taskKey }) {
-		const result = await prisma.repoCrawTaskRun.create({
+		const result = await prisma.repoCrawlTaskRun.create({
 			data: {
 				taskKey,
 				starCursor: LEAST_START_COUNT_FOR_REPO - 1,
@@ -77,8 +77,8 @@ class RepoCrawTaskRun {
 			},
 		});
 
-		return new RepoCrawTaskRun(result);
+		return new RepoCrawlTaskRun(result);
 	}
 }
 
-export default RepoCrawTaskRun;
+export default RepoCrawlTaskRun;

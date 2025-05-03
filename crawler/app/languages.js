@@ -1,7 +1,7 @@
-const supportedLanguages = {
+const Language = {
 	Java: 'Java',
 	Kotlin: 'Kotlin',
-	Ruby:'Ruby',
+	Ruby: 'Ruby',
 	Go: 'Go',
 	CSharp: 'C#',
 	JavaScript: 'JavaScript',
@@ -10,4 +10,4 @@ const supportedLanguages = {
 	Vue: 'Vue',
 };
 
-export default supportedLanguages;
+export default Language;

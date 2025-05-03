@@ -1,35 +1,30 @@
 import { LEAST_START_COUNT_FOR_REPO } from './constants.js';
 import githubClient, { RateLimitError, EndOfSeachError } from './github-client.js';
-import RepoCrawTaskRun from './model/repo-craw-task-run.js';
+import RepoCrawlTaskRun from './model/repo-crawl-task-run.js';
 import Repo from './model/repo.js';
 import sleep from './sleep.js';
-import supportedLanguages from './supported-languages.js';
+import Language from './languages.js';
 const SEARCH_REPO_TAKE = 100;
 
 async function crawlReposTask() {
 	while (true) {
-		for (const language of Object.values(supportedLanguages)) {
+		for (const language of Object.values(Language)) {
 			try {
 				const task_key = `crawl_repos_${language}_${LEAST_START_COUNT_FOR_REPO}`;
 
-				let taskRun = await RepoCrawTaskRun.getOrCreateByKey(task_key);
+				let taskRun = await RepoCrawlTaskRun.getOrCreateByKey(task_key);
 
 				let page = 1;
+				let starCursor = taskRun.starCursor;
 				while (!taskRun.isCompleted) {
 					try {
-						let starCursor = taskRun.starCursor;
-						const response = await githubClient.searchReposByLanguage(
-							language,
-							SEARCH_REPO_TAKE,
-							page,
-							taskRun.starCursor,
-						);
+						const response = await githubClient.searchReposByLanguage(language, SEARCH_REPO_TAKE, page, starCursor);
 						page += 1;
-
+						let maxStars = starCursor;
 						for (const repo of response.items) {
 							console.log(`${new Date()} - Saving repo ${repo.full_name} - ${repo.stargazers_count}`);
-							if (repo.stargazers_count > starCursor) {
-								starCursor = repo.stargazers_count;
+							if (repo.stargazers_count > maxStars) {
+								maxStars = repo.stargazers_count;
 							}
 
 							const languageDetails = await githubClient.getRepoLanguages(repo.owner.login, repo.name);
@@ -67,11 +62,11 @@ async function crawlReposTask() {
 							}
 						}
 
-						await taskRun.updateRun(starCursor, response.items.length < SEARCH_REPO_TAKE);
+						await taskRun.updateRun(maxStars, response.items.length < SEARCH_REPO_TAKE);
 					} catch (error) {
 						if (error instanceof EndOfSeachError) {
-							taskRun.updateRun(taskRun.starCursor, false);
 							page = 1;
+							starCursor = taskRun.starCursor;
 						} else if (error instanceof RateLimitError) {
 							const rateLimitResetTime = error.rateLimit.rateLimitReset;
 							const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();

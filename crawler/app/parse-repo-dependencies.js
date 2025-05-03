@@ -4,7 +4,7 @@ import Repo from './model/repo.js';
 import DependencyMapping from './model/dependency-mapping.js';
 import RepoDependency from './model/repo-dependency.js';
 import { UnprocessableRepoError } from './repo-dependency-list.js';
-import supportedLanguages from './supported-languages.js';
+import Language from './languages.js';
 import { parseTSJSDependencies } from './dependency-parser/js-ts-dependency-parser.js';
 import { parsePythonDependencies } from './dependency-parser/python-dependency-parser.js';
 import { parseCSharpDependencies } from './dependency-parser/csharp-dependency-parser.js';
@@ -17,37 +17,63 @@ import { parseJavaDependencies as parseJavaKotlinDependencies } from './dependen
 import { parseRubyDependencies } from './dependency-parser/ruby-dependency-parser.js';
 
 const REPO_TAKE_COUNT = 5;
-const PROCESS_STATE = {
-	PROCESSED: 'processed',
-	ERROR: 'error',
-	UNPROCESSIBLE: 'unprocessible',
-};
-const repoDependencyProcessorByLanguage = {};
-/**
- *
- * @param {*} language
- * @param {(repo: Repo) => Promise<RepoDependencyMapping>} parser
- */
-const setDependencyParserForLang = (language, parser) => {
-	repoDependencyProcessorByLanguage[language] = parser;
-};
-const getDependencyParserForLang = (language) => {
-	return repoDependencyProcessorByLanguage[language];
-};
 
-/**
- * parse repo dependencies for a given language
- * @param {Repository} repo
- * @param {string} language
- * @returns {Promise<RepoDependencyList>}
- */
-const parseDependencies = async (repo, language) => {
-	const parser = getDependencyParserForLang(language);
-	console.log(`${new Date()} - Processing repo ${repo.fullName} - ${language}`);
-	if (parser) {
-		return await parser(repo);
+class DepedendencyParser {
+	static parsers = [];
+
+	/**
+	 * @param {string | string[]} language
+	 * @param {(repo: Repo) => Promise<RepoDependencyMapping>} parser
+	 */
+	constructor(languages, parser) {
+		if (!languages) throw new Error('language is required');
+		if (!parser) throw new Error('parser is required');
+		if (typeof languages === 'string') {
+			languages = [languages];
+		}
+		this.languages = new Set(languages);
+		this.parser = parser;
 	}
-};
+
+	/**
+	 * @param {Repo} repo
+	 * @returns {bool}
+	 */
+	canParseRepo(repo) {
+		const allLanguages = [repo.language, ...repo.languages];
+		for (const lang of allLanguages) {
+			if (this.languages.has(lang)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	/**
+	 *
+	 * @param {Repo} repo
+	 * @returns {Promise<RepoDependencyList>}
+	 */
+	async parseDependencies(repo) {
+		if (!this.canParseRepo(repo)) {
+			return null;
+		}
+		return await this.parser(repo);
+	}
+
+	static addParser(languages, parser) {
+		if (!languages) throw new Error('language is required');
+		if (!parser) throw new Error('parser is required');
+		const languageParser = new DepedendencyParser(languages, parser);
+		this.parsers.push(languageParser);
+	}
+	/**
+	 * @param {Repo} repo
+	 * @returns {DepedendencyParser[]}
+	 */
+	static getParsersForRepo(repo) {
+		return this.parsers.filter((p) => p.canParseRepo(repo));
+	}
+}
 
 const clearRepoDependencies = async (repoId) => {
 	if (!repoId) throw new Error('repoId is required');
@@ -87,6 +113,8 @@ const saveRepoDependencyList = async (repoDependencyList) => {
 	}
 
 	for (const project of repoDependencyList.projects) {
+		if (project.dependencies.length === 0) continue;
+
 		const repoDependency = new RepoDependency({
 			repoId: repoDependencyList.id,
 			path: project.path,
@@ -137,35 +165,25 @@ const saveRepoDependencyList = async (repoDependencyList) => {
  */
 const parseAndSaveDependencies = async (repo) => {
 	const dependencies = [];
-	// replace typescript with javascript to avoid duplicate processing
-	const allLanguages = [repo.language, ...repo.languages].map((lang) =>
-		lang === supportedLanguages.TypeScript ? supportedLanguages.JavaScript : lang,
-	);
-	const repoLanguages = [...new Set(allLanguages)];
-	const processState = {};
-	for (const language of repoLanguages) {
+	const parsers = DepedendencyParser.getParsersForRepo(repo);
+	for (const parser of parsers) {
+		const languages = [...parser.languages].join(', ');
 		try {
-			if (Object.values(supportedLanguages).indexOf(language) === -1) {
-				console.log(`${new Date()} - Processing repo ${repo.fullName} - ${language} - Not Supported`);
-				continue;
-			}
-			const repoDependencyList = await parseDependencies(repo, language);
+			console.log(`${new Date()} - Processing repo ${repo.fullName} - ${languages} `);
+			const repoDependencyList = await parser.parseDependencies(repo);
 			dependencies.push(repoDependencyList);
-			processState[language] = PROCESS_STATE.PROCESSED;
 		} catch (error) {
-			console.error(`${new Date()} - Processing repo ${repo.fullName} - ${language} - Error: ${error.message}`);
+			console.error(`${new Date()} - Processing repo ${repo.fullName} - ${languages} - Error: ${error.message}`);
 			if (error instanceof UnprocessableRepoError) {
-				// await Repo.update(repo.id, { processible: false });
-				processState[language] = PROCESS_STATE.UNPROCESSIBLE;
+				//TODO: do not try parse dep for language
 			} else if (error instanceof RateLimitError) {
 				const rateLimitResetTime = error.rateLimit.rateLimitReset;
 				const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
 				await sleep(remainingTimeInMilliseconds);
-			} else {
-				processState[language] = PROCESS_STATE.ERROR + ' | ' + error.message;
 			}
 		}
 	}
+
 	if (dependencies.length > 0) {
 		await clearRepoDependencies(repo.id);
 		for (const repoDependencyList of dependencies) {
@@ -186,7 +204,7 @@ const processNewRepos = async () => {
 		for (const repo of repos) {
 			try {
 				await parseAndSaveDependencies(repo);
-			} catch { }
+			} catch {}
 		}
 		await taskRun.updateRun(repos[repos.length - 1].id);
 	} while (true);
@@ -215,15 +233,12 @@ const reprocessOldRepos = async () => {
 };
 
 const parseDependenciesTask = async () => {
-	setDependencyParserForLang(supportedLanguages.Ruby, parseRubyDependencies)
-	setDependencyParserForLang(supportedLanguages.Java, parseJavaKotlinDependencies);
-	setDependencyParserForLang(supportedLanguages.Kotlin, parseJavaKotlinDependencies);
-	setDependencyParserForLang(supportedLanguages.Go, parseGoDependencies);
-	setDependencyParserForLang(supportedLanguages.JavaScript, parseTSJSDependencies);
-	setDependencyParserForLang(supportedLanguages.TypeScript, parseTSJSDependencies);
-	setDependencyParserForLang(supportedLanguages.Vue, parseTSJSDependencies);
-	setDependencyParserForLang(supportedLanguages.Python, parsePythonDependencies);
-	setDependencyParserForLang(supportedLanguages.CSharp, parseCSharpDependencies);
+	DepedendencyParser.addParser([Language.Kotlin, Language.Java], parseJavaKotlinDependencies);
+	DepedendencyParser.addParser(Language.Ruby, parseRubyDependencies);
+	DepedendencyParser.addParser(Language.Go, parseGoDependencies);
+	DepedendencyParser.addParser([Language.Vue, Language.JavaScript, Language.TypeScript], parseTSJSDependencies);
+	DepedendencyParser.addParser(Language.Python, parsePythonDependencies);
+	DepedendencyParser.addParser(Language.CSharp, parseCSharpDependencies);
 
 	while (true) {
 		try {
