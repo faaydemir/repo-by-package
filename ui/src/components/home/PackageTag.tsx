@@ -101,12 +101,26 @@ const getPackageUrl = (provider: string, name: string) => {
 		return `https://pypi.org/project/${name}`;
 	} else if (provider === 'nuget') {
 		return `https://www.nuget.org/packages/${name}`;
+	} else if (provider === 'RubyGems') {
+		return `https://rubygems.org/gems/${name}`;
+	} else if (provider === 'Maven') {
+		const groupId = name.split(':')[0];
+		const artifactId = name.split(':')[1];
+		return `https://search.maven.org/artifact/${groupId}/${artifactId}`;
+	} else if (provider === 'go') {
+		return `https://pkg.go.dev/${name}`;
 	}
 	return '';
 };
 
 const REPO_NAME_MAX_LENGTH = 100;
-
+export const convertJavaPackageName = (name: string) => {
+	const parts = name.split(':');
+	if (parts.length >= 2) {
+		return parts[1];
+	}
+	return name;
+};
 export function PackageTag({ name, repoCount, provider, size = 'md', className, showLink }: PackageTagProps) {
 	const sizeClasses = {
 		sm: 'py-0.5 text-xs',
@@ -114,6 +128,10 @@ export function PackageTag({ name, repoCount, provider, size = 'md', className, 
 		lg: 'py-2.5 text-base',
 	};
 	const color = uniqueColorGenerator(name);
+	const orginalName = name;
+	if (provider === 'Maven') {
+		name = convertJavaPackageName(name);
+	}
 
 	if (name.length > REPO_NAME_MAX_LENGTH) {
 		name = name.slice(0, REPO_NAME_MAX_LENGTH) + '...';
@@ -139,7 +157,7 @@ export function PackageTag({ name, repoCount, provider, size = 'md', className, 
 			<span className="truncate tracking-tight">{name}</span>
 			{repoCount !== undefined && <span className="ml-2 shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
 			{showLink && (
-				<Link className="ml-2 shrink-0 text-xs font-normal opacity-75" href={getPackageUrl(provider, name)}>
+				<Link className="ml-2 shrink-0 text-xs font-normal opacity-75" href={getPackageUrl(provider, orginalName)}>
 					<OpenPageIcon />
 				</Link>
 			)}
@@ -161,6 +179,12 @@ export function SelectedPackageTag({
 		lg: 'py-2.5 text-base',
 	};
 	const color = uniqueColorGenerator(name);
+
+	const orginalName = name;
+
+	if (provider === 'Maven') {
+		name = convertJavaPackageName(name);
+	}
 
 	if (name.length > REPO_NAME_MAX_LENGTH) {
 		name = name.slice(0, REPO_NAME_MAX_LENGTH) + '...';
@@ -201,7 +225,7 @@ export function SelectedPackageTag({
 				<a
 					className="h-full border-l border-gray-300 px-2 text-xs font-normal opacity-60 hover:opacity-100"
 					target="_blank"
-					href={getPackageUrl(provider, name)}
+					href={getPackageUrl(provider, orginalName)}
 				>
 					<OpenPageIcon className="h-5 w-5" />
 				</a>

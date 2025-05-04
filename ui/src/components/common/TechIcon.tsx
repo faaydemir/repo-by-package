@@ -1,6 +1,21 @@
 import React from 'react';
 
-const SUPPORTED_TECHNOLOGIES = ['javascript', 'typescript', 'python', 'c#', 'nuget', 'pypi', 'npm', 'github'] as const;
+const SUPPORTED_TECHNOLOGIES = [
+	'javascript',
+	'go',
+	'rubygems',
+	'maven',
+	'typescript',
+	'python',
+	'c#',
+	'nuget',
+	'pypi',
+	'npm',
+	'github',
+	'java',
+	'kotlin',
+	'ruby',
+] as const;
 type SupportedTechnology = (typeof SUPPORTED_TECHNOLOGIES)[number];
 
 type IconSize = 'xs' | 'sm' | 'md' | 'lg';

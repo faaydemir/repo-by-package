@@ -18,7 +18,7 @@ const Header = () => {
 							<img src={appInfo.favicon} alt={appInfo.name} className="h-7 w-7 object-contain md:h-7 md:w-7" />
 							<span className="text-md hidden text-gray-900 md:inline">{appInfo.name}</span>
 						</Link>
-						<div className="ml-0 flex h-full flex-row items-center gap-2 px-0 py-0 md:ml-4 md:gap-4 md:px-2">
+						<div className="ml-0 flex h-full flex-row items-center gap-2 px-0 py-0 md:ml-4 md:gap-2 md:px-2">
 							{appInfo.supportedProviders.map((provider) => {
 								const isActive = currentProvider === provider;
 								return (
@@ -31,7 +31,7 @@ const Header = () => {
 												: 'border-transparent text-gray-600 hover:border-gray-400 hover:text-gray-800'
 										}`}
 									>
-										<TechIcon tech={provider} showText={true} size="sm" />
+										<TechIcon tech={provider.toLowerCase()} showText={true} size="sm" />
 									</Link>
 								);
 							})}
