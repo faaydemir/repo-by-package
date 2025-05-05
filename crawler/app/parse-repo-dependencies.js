@@ -15,7 +15,7 @@ import DependencyParseTaskRun from './model/dependency-parse-task-run.js';
 import { parseGoDependencies } from './dependency-parser/go-dependency-parser.js';
 import { parseJavaDependencies as parseJavaKotlinDependencies } from './dependency-parser/java-kotlin-dependency-parser.js';
 import { parseRubyDependencies } from './dependency-parser/ruby-dependency-parser.js';
-import { parseRustDependencies } from './dependency-parser/parse-rust-dependencies.js';
+import { parseRustDependencies } from './dependency-parser/rust-dependency-parser.js';
 
 const REPO_TAKE_COUNT = 5;
 
