@@ -15,6 +15,7 @@ import DependencyParseTaskRun from './model/dependency-parse-task-run.js';
 import { parseGoDependencies } from './dependency-parser/go-dependency-parser.js';
 import { parseJavaDependencies as parseJavaKotlinDependencies } from './dependency-parser/java-kotlin-dependency-parser.js';
 import { parseRubyDependencies } from './dependency-parser/ruby-dependency-parser.js';
+import { parseRustDependencies } from './dependency-parser/parse-rust-dependencies.js';
 
 const REPO_TAKE_COUNT = 5;
 
@@ -184,8 +185,9 @@ const parseAndSaveDependencies = async (repo) => {
 		}
 	}
 
+	await clearRepoDependencies(repo.id);
+
 	if (dependencies.length > 0) {
-		await clearRepoDependencies(repo.id);
 		for (const repoDependencyList of dependencies) {
 			await saveRepoDependencyList(repoDependencyList);
 		}
@@ -233,6 +235,7 @@ const reprocessOldRepos = async () => {
 };
 
 const parseDependenciesTask = async () => {
+	DepedendencyParser.addParser(Language.Rust, parseRustDependencies);
 	DepedendencyParser.addParser([Language.Kotlin, Language.Java], parseJavaKotlinDependencies);
 	DepedendencyParser.addParser(Language.Ruby, parseRubyDependencies);
 	DepedendencyParser.addParser(Language.Go, parseGoDependencies);

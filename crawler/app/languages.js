@@ -1,4 +1,5 @@
 const Language = {
+	Rust: 'Rust',
 	Java: 'Java',
 	Kotlin: 'Kotlin',
 	Ruby: 'Ruby',
