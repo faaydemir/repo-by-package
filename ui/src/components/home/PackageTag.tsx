@@ -109,6 +109,8 @@ const getPackageUrl = (provider: string, name: string) => {
 		return `https://search.maven.org/artifact/${groupId}/${artifactId}`;
 	} else if (provider === 'go') {
 		return `https://pkg.go.dev/${name}`;
+	} else if (provider === 'cargo') {
+		return `https://crates.io/crates/${name}`;
 	}
 	return '';
 };
