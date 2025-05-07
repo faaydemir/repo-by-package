@@ -19,17 +19,21 @@ const Header = () => {
 							<span className="text-md hidden text-gray-900 md:inline">{appInfo.name}</span>
 						</Link>
 						<div className="ml-0 flex h-full flex-row items-center gap-2 px-0 py-0 md:ml-4 md:gap-2 md:px-2">
-							{appInfo.supportedProviders.map((provider) => {
+							{appInfo.supportedProviders.map((provider, i) => {
 								const isActive = currentProvider === provider;
 								return (
 									<Link
 										href={`/${provider}`}
 										key={provider}
-										className={`ml-0 flex h-full items-center border-b-2 px-2 md:ml-4 md:px-1 ${
-											isActive
+										className={`ml-0 flex h-full items-center border-b-2 px-2 md:ml-4 md:px-1 
+											${i > 3
+												? 'md:visible invisible'
+												: ''
+											}
+											${isActive
 												? 'border-gray-500 text-gray-800'
 												: 'border-transparent text-gray-600 hover:border-gray-400 hover:text-gray-800'
-										}`}
+											}`}
 									>
 										<TechIcon tech={provider.toLowerCase()} showText={true} size="sm" />
 									</Link>
