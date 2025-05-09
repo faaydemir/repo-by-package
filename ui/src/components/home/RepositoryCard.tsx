@@ -12,8 +12,9 @@ interface RepositoryCardProps {
 }
 
 function getGithubSearchUrl(pkg: Package, repo: string, folder: string): string | undefined {
-	//TODO: maybe move this to client ?
-	if (pkg.provider === 'nuget') return;
+	const notSupportedProviders = new Set(['maven', 'nuget', 'go']);
+	if (notSupportedProviders.has(pkg.provider)) return;
+
 	//TODO: fix for npm package path delete when project path is correctly setted on parsing
 	if (folder && folder.endsWith('package.json')) {
 		folder = folder.replace('package.json', '');
@@ -25,6 +26,8 @@ function getGithubSearchUrl(pkg: Package, repo: string, folder: string): string 
 		npm: ['js', 'ts', 'jsx', 'tsx', 'vue', 'svelte'],
 		pypi: ['py'],
 		nuget: ['cs'],
+		RubyGems : ['rb'],
+		cargo:['rs'],
 	};
 
 	const extensionQuery = providerFileMapping[pkg.provider]
