@@ -12,22 +12,21 @@ interface RepositoryCardProps {
 }
 
 function getGithubSearchUrl(pkg: Package, repo: string, folder: string): string | undefined {
-	const notSupportedProviders = new Set(['maven', 'nuget', 'go']);
+	const notSupportedProviders = new Set(['Maven', 'nuget', 'go']);
 	if (notSupportedProviders.has(pkg.provider)) return;
 
 	//TODO: fix for npm package path delete when project path is correctly setted on parsing
 	if (folder && folder.endsWith('package.json')) {
 		folder = folder.replace('package.json', '');
 	}
-	// if (folder && !folder.startsWith('/')) {
-	// 	folder = '/' + folder;
-	// }
+
 	const providerFileMapping: Record<string, string[]> = {
 		npm: ['js', 'ts', 'jsx', 'tsx', 'vue', 'svelte'],
 		pypi: ['py'],
 		nuget: ['cs'],
-		RubyGems : ['rb'],
-		cargo:['rs'],
+		RubyGems: ['rb'],
+		cargo: ['rs'],
+		Maven: ['java', 'kt'],
 	};
 
 	const extensionQuery = providerFileMapping[pkg.provider]
@@ -75,7 +74,7 @@ function formatDate(date: Date): string {
 export function RepositoryCard({ repository, selectedPackages, onPackageClick }: RepositoryCardProps) {
 	const { name, topics, description, language, url, stars, updatedAt, projects } = repository;
 
-	const [showAllProjects, setShowAllProjects] = useState<boolean>(false);
+	const [showAllProjects, setShowAllProjects] = useState<boolean>(true);
 	const [extenedPackages, setExtendedPackages] = useState<Record<number, boolean>>({});
 
 	const showHideAllPackages = (projectId: number) => {
