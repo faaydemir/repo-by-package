@@ -4,7 +4,7 @@ const appInfo = {
 	description: 'Browse github repositories by packages',
 	icon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.svg`,
 	favicon: `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/favicon.png`,
-	supportedProviders: ['npm', 'pypi', 'nuget', 'RubyGems', 'Maven', 'go'],
+	supportedProviders: ['npm', 'pypi', 'go', 'nuget', 'RubyGems', 'Maven', 'cargo'],
 };
 
 export default appInfo;

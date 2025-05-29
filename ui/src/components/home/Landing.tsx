@@ -10,7 +10,7 @@ const Landing = ({ appInfo }: { appInfo?: AppInfo }) => {
 		<>
 			{appInfo && (
 				<div className="min-h-screen bg-gradient-to-br">
-					<div className="container max-w-5xl px-4 pb-6 md:px-0 md:pb-32 md:pt-10">
+					<div className="container max-w-5xl px-4 pb-6 md:px-0 md:pb-16 md:pt-5">
 						<div className="relative flex flex-col items-start">
 							<div className="flex flex-col items-center justify-center gap-5 md:flex-row">
 								<div>

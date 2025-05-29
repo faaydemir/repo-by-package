@@ -2,7 +2,7 @@ import githubClient from '../github-client.js';
 import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from '../repo-dependency-list.js';
 import { getFolderPath } from '../utils.js';
 import * as itoml from '@iarna/toml';
-const RUST_PROVUDER = 'cargo';
+const RUST_PROVIDER = 'cargo';
 /**
  * Parse dependency information from Cargo.toml dependency entry
  * @param {string} name - The name of the dependency
@@ -22,7 +22,7 @@ const parseCargoDependency = (name, spec) => {
 		if (spec.git) {
 			return new RepoDependency({
 				name: spec.package || name,
-				provider: RUST_PROVUDER,
+				provider: RUST_PROVIDER,
 			});
 		}
 	}
@@ -30,7 +30,7 @@ const parseCargoDependency = (name, spec) => {
 	// Fallback
 	return new RepoDependency({
 		name,
-		provider: RUST_PROVUDER,
+		provider: RUST_PROVIDER,
 	});
 };
 
@@ -148,7 +148,7 @@ export const parseRustDependencies = async (repo) => {
 		dependencyList.projects.push(
 			new Project({
 				path: folder,
-				packageProvider: RUST_PROVUDER,
+				packageProvider: RUST_PROVIDER,
 				dependencies: dependencies,
 			}),
 		);

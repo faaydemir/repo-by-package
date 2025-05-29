@@ -15,6 +15,8 @@ const SUPPORTED_TECHNOLOGIES = [
 	'java',
 	'kotlin',
 	'ruby',
+	'cargo',
+	'rust'
 ] as const;
 type SupportedTechnology = (typeof SUPPORTED_TECHNOLOGIES)[number];
 
@@ -32,6 +34,8 @@ const getSizeClass = (size: IconSize): string => {
 			return 'w-5';
 		case 'sm':
 			return 'w-7';
+		case 'md':
+			return 'w-10';
 		case 'lg':
 			return 'w-16';
 		default:
