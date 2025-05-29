@@ -1,5 +1,6 @@
 import githubClient from '../github-client.js';
-import { Project, RepoDependency, RepoDependencyList, UnprocessableRepoError } from '../repo-dependency-list.js';
+import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from '../repo-dependency-list.js';
+import { getFolderPath } from '../utils.js';
 import semver from 'semver';
 
 /**
@@ -159,10 +160,10 @@ export const parseCSharpDependencies = async (repo) => {
 		throw new UnprocessableRepoError('No supported C# dependency files found (excluding tests/samples)');
 	}
 
-	// Group files by directory (similar to how the Python parser does)
+	// Group dependency files by folder
 	const folderToFiles = filteredFiles.reduce((acc, file) => {
-		const folder = file.path.split('/').slice(0, -1).join('/');
-		if (!acc[folder]) acc[folder] = [];
+		const folder = getFolderPath(file.path);
+		acc[folder] = acc[folder] || [];
 		acc[folder].push(file);
 		return acc;
 	}, {});

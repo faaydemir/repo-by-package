@@ -1,5 +1,6 @@
 import githubClient from '../github-client.js';
 import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from '../repo-dependency-list.js';
+import { getFolderPath } from '../utils.js';
 import * as itoml from '@iarna/toml';
 const RUST_PROVUDER = 'cargo';
 /**
@@ -126,7 +127,7 @@ export const parseRustDependencies = async (repo) => {
 
 	// Group dependency files by folder
 	const folderToFiles = allFiles.reduce((acc, file) => {
-		const folder = file.path.split('/').slice(0, -1).join('/');
+		const folder = getFolderPath(file.path);
 		if (!acc[folder]) acc[folder] = [];
 		acc[folder].push(file);
 		return acc;

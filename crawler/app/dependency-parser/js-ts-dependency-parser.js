@@ -1,6 +1,7 @@
 import githubClient from '../github-client.js';
 import { Project, RepoDependency, RepoDependencyList, UnprocessableRepoError } from '../repo-dependency-list.js';
 import semver from 'semver';
+import { getFolderPath } from '../utils.js';
 
 /**
  * @deprecated verison parsing not worked for all cases so not used in ui, so do not need to store in db
@@ -106,12 +107,20 @@ export const parseVersionText = (version) => {
 
 /**
  *
- * @param {*} packageJson
+ * @param {string} packageJsonContent
  * @returns {RepoDependency[]}
  */
-export const parseDependenciesFromPackageJson = (packageJson) => {
+export const parseDependenciesFromPackageJson = (packageJsonContent) => {
+	let packageJson;
+	try {
+		packageJson = JSON.parse(packageJsonContent);
+	} catch (error) {
+		console.error('Failed to parse package.json content:', error);
+		return [];
+	}
+
 	const dependencies = packageJson.dependencies ?? {};
-	const devDependencies = packageJson.devDependencies ?? {};
+	// const devDependencies = packageJson.devDependencies ?? {};
 
 	const allDependencies = {
 		...dependencies,
@@ -146,13 +155,11 @@ export const parseTSJSDependencies = async (repo) => {
 	});
 
 	for (const packageJson of allFiles) {
-		// do not process package json if path contains sample, test, example
-
 		const dependencies = parseDependenciesFromPackageJson(packageJson.content);
-
+		const folderPath = getFolderPath(packageJson.path);
 		const project = new Project({
 			commitId: undefined,
-			path: packageJson.path,
+			path: folderPath,
 			packageProvider: 'npm',
 			dependencies,
 		});

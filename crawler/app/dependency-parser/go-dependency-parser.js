@@ -1,6 +1,6 @@
-import githubClient from "../github-client.js";
-import Repo from "../model/repo.js";
-import { Project, RepoDependencyList, RepoDependency, UnprocessableRepoError } from "../repo-dependency-list.js";
+import githubClient from '../github-client.js';
+import { Project, RepoDependencyList, RepoDependency, UnprocessableRepoError } from '../repo-dependency-list.js';
+import { getFolderPath } from '../utils.js';
 import peggy from 'peggy';
 
 const GO_PROVIDER = 'go';
@@ -35,82 +35,79 @@ End       = Eof / Newline
 Eof           = !.
 `;
 
-
 let goRequirementParser = null;
 
 /**
- * @param {*} ast 
+ * @param {*} ast
  * @returns {Array<{name: string, version: string}>}
  */
 const findRequireSpec = (ast) => {
-    let specs = [];
+	let specs = [];
 
-    if (Array.isArray(ast)) {
-        for (const item of ast) {
-            specs = specs.concat(findRequireSpec(item));
-        }
-    } else if (ast && ast.type === "RequireSpec") {
-        // Convert module and version arrays to strings and format the result
-        specs.push({
-            name: Array.isArray(ast.module) ? ast.module.join('') : ast.module,
-            version: Array.isArray(ast.version) ? ast.version.join('') : ast.version
-        });
-    }
-    return specs;
-}
+	if (Array.isArray(ast)) {
+		for (const item of ast) {
+			specs = specs.concat(findRequireSpec(item));
+		}
+	} else if (ast && ast.type === 'RequireSpec') {
+		// Convert module and version arrays to strings and format the result
+		specs.push({
+			name: Array.isArray(ast.module) ? ast.module.join('') : ast.module,
+			version: Array.isArray(ast.version) ? ast.version.join('') : ast.version,
+		});
+	}
+	return specs;
+};
 
 /**
- * @param {String} goFileContent 
- * @returns {RepoDependency[]} 
+ * @param {String} goFileContent
+ * @returns {RepoDependency[]}
  */
 export const parseGoModFileContent = (goFileContent) => {
-    if (!goFileContent) {
-        return [];
-    }
-    if (!goRequirementParser) {
-        goRequirementParser = peggy.generate(GO_REQUIRE_PEG_GRAMMER)
-    }
+	if (!goFileContent) {
+		return [];
+	}
+	if (!goRequirementParser) {
+		goRequirementParser = peggy.generate(GO_REQUIRE_PEG_GRAMMER);
+	}
 
-    const parsed = goRequirementParser.parse(goFileContent);
-    const dependencies = findRequireSpec(parsed);
-    const repoDependencies = dependencies.map((dep) => {
-        return new RepoDependency({
-            name: dep.name,
-            provider: GO_PROVIDER,
-        });
-    });
+	const parsed = goRequirementParser.parse(goFileContent);
+	const dependencies = findRequireSpec(parsed);
+	const repoDependencies = dependencies.map((dep) => {
+		return new RepoDependency({
+			name: dep.name,
+			provider: GO_PROVIDER,
+		});
+	});
 
-    return repoDependencies;
-}
+	return repoDependencies;
+};
 
 /**
- * @param {Repo} repo 
+ * @param {Repo} repo
  * @returns {RepoDependencyList}
  */
 export const parseGoDependencies = async (repo) => {
-    const dependencyList = new RepoDependencyList({ id: repo.id });
+	const dependencyList = new RepoDependencyList({ id: repo.id });
 
-    const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, [
-        'go.mod'
-    ]);
+	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, ['go.mod']);
 
-    const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
+	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
 
-    if (allFiles.length === 0) {
-        throw new UnprocessableRepoError('No supported Go dependency files found');
-    }
+	if (allFiles.length === 0) {
+		throw new UnprocessableRepoError('No supported Go dependency files found');
+	}
 
-    for (const file of allFiles) {
-        const fileFolder = file.path.split('/').slice(0, -1).join('/');
-        const dependencies = parseGoModFileContent(file.content);
-        dependencyList.projects.push(
-            new Project({
-                path: fileFolder,
-                packageProvider: GO_PROVIDER,
-                dependencies: dependencies,
-            })
-        );
-    }
+	for (const file of allFiles) {
+		const fileFolder = getFolderPath(file.path);
+		const dependencies = parseGoModFileContent(file.content);
+		dependencyList.projects.push(
+			new Project({
+				path: fileFolder,
+				packageProvider: GO_PROVIDER,
+				dependencies: dependencies,
+			}),
+		);
+	}
 
-    return dependencyList;
+	return dependencyList;
 };

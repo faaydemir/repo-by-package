@@ -2,6 +2,8 @@ import githubClient from '../github-client.js';
 import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from '../repo-dependency-list.js';
 import { XMLParser } from 'fast-xml-parser'; // This dependency needs to be added to package.json
 import * as gparser from 'gradle-to-js';
+import { getFolderPath } from '../utils.js';
+
 const JAVA_PROVIDER = 'Maven';
 
 /**
@@ -148,7 +150,7 @@ export const parseJavaDependencies = async (repo) => {
 
 	// Group dependency files by folder
 	const folderToFiles = allFiles.reduce((acc, file) => {
-		const folder = file.path.split('/').slice(0, -1).join('/');
+		const folder = getFolderPath(file.path);
 		if (!acc[folder]) acc[folder] = [];
 		acc[folder].push(file);
 		return acc;

@@ -1,6 +1,7 @@
 //TODO: version parsing not working correctly
 import githubClient from '../github-client.js';
 import { Project, RepoDependency, UnprocessableRepoError, RepoDependencyList } from '../repo-dependency-list.js';
+import { getFolderPath } from '../utils.js';
 import semver from 'semver';
 import * as itoml from '@iarna/toml';
 
@@ -287,7 +288,7 @@ export const parsePythonDependencies = async (repo) => {
 		'pyproject.toml',
 	]);
 
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|node_modules|test|example)/i));
+	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
 
 	if (allFiles.length === 0) {
 		throw new UnprocessableRepoError('No supported Python dependency files found');
@@ -295,7 +296,7 @@ export const parsePythonDependencies = async (repo) => {
 
 	// group dependency files by folder
 	const folderToFiles = allFiles.reduce((acc, file) => {
-		const folder = file.path.split('/').slice(0, -1).join('/');
+		const folder = getFolderPath(file.path);
 		if (!acc[folder]) acc[folder] = [];
 		acc[folder].push(file);
 		return acc;
