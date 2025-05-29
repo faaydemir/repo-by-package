@@ -139,10 +139,11 @@ export const parseDependenciesFromPackagesConfig = (content) => {
  * @returns {Promise<RepoDependencyList>}
  */
 export const parseCSharpDependencies = async (repo) => {
-	const dependencyFiles = await githubClient.getFileContents(
+	const dependencyFiles = await githubClient.getFilesContents(
 		repo.owner,
 		repo.name,
-		['*.csproj'], //['*.csproj', 'packages.config']
+		[/\.csproj$/i], //[/\.csproj$/i, /packages\.config$/i]
+		[/(sample|example|test)/i], // Exclude test/sample folders
 	);
 
 	if (!dependencyFiles || dependencyFiles.length === 0) {
@@ -153,15 +154,8 @@ export const parseCSharpDependencies = async (repo) => {
 		id: repo.id,
 	});
 
-	// Filter out sample/test/example files
-	const filteredFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
-
-	if (filteredFiles.length === 0) {
-		throw new UnprocessableRepoError('No supported C# dependency files found (excluding tests/samples)');
-	}
-
 	// Group dependency files by folder
-	const folderToFiles = filteredFiles.reduce((acc, file) => {
+	const folderToFiles = dependencyFiles.reduce((acc, file) => {
 		const folder = getFolderPath(file.path);
 		acc[folder] = acc[folder] || [];
 		acc[folder].push(file);

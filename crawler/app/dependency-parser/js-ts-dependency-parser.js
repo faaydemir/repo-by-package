@@ -142,11 +142,12 @@ export const parseDependenciesFromPackageJson = (packageJsonContent) => {
  * @returns {Promise<RepoDependencyList>}
  */
 export const parseTSJSDependencies = async (repo) => {
-	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, ['package.json']);
+	const matchPatterns = [/package\.json$/i];
+	const excludePatterns = [/(sample|test|example|node_modules)/i];
 
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example|node_modules)/i));
+	const dependencyFiles = await githubClient.getFilesContents(repo.owner, repo.name, matchPatterns, excludePatterns);
 
-	if (allFiles.length === 0) {
+	if (dependencyFiles.length === 0) {
 		throw new UnprocessableRepoError('No package.json found');
 	}
 
@@ -154,7 +155,7 @@ export const parseTSJSDependencies = async (repo) => {
 		id: repo.id,
 	});
 
-	for (const packageJson of allFiles) {
+	for (const packageJson of dependencyFiles) {
 		const dependencies = parseDependenciesFromPackageJson(packageJson.content);
 		const folderPath = getFolderPath(packageJson.path);
 		const project = new Project({

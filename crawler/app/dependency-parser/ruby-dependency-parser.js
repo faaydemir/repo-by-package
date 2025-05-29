@@ -48,14 +48,18 @@ export const parseRubyDependencies = async (repo) => {
 	const dependencyList = new RepoDependencyList({ id: repo.id });
 
 	// Get Ruby dependency files from GitHub
-	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, ['Gemfile']);
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
+	const dependencyFiles = await githubClient.getFilesContents(
+		repo.owner,
+		repo.name,
+		[/Gemfile$/i],
+		[/(sample|example|test)/i], // Exclude test/sample folders
+	);
 
-	if (allFiles.length === 0) {
+	if (dependencyFiles.length === 0) {
 		throw new UnprocessableRepoError('No supported Ruby dependency files found');
 	}
 
-	for (const file of allFiles) {
+	for (const file of dependencyFiles) {
 		const fileFolder = getFolderPath(file.path);
 		const dependencies = parseGemFileContent(file.content);
 		dependencyList.projects.push(

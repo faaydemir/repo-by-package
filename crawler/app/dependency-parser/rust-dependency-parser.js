@@ -117,16 +117,19 @@ export const parseRustDependencies = async (repo) => {
 	const dependencyList = new RepoDependencyList({ id: repo.id });
 
 	// Get Rust dependency files from GitHub - looking for Cargo.toml files
-	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, ['Cargo.toml']);
+	const dependencyFiles = await githubClient.getFilesContents(
+		repo.owner,
+		repo.name,
+		[/Cargo\.toml$/i],
+		[/(sample|example|test)/i],
+	);
 
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example|target)/i));
-
-	if (allFiles.length === 0) {
+	if (dependencyFiles.length === 0) {
 		throw new UnprocessableRepoError('No supported Rust dependency files (Cargo.toml) found');
 	}
 
 	// Group dependency files by folder
-	const folderToFiles = allFiles.reduce((acc, file) => {
+	const folderToFiles = dependencyFiles.reduce((acc, file) => {
 		const folder = getFolderPath(file.path);
 		if (!acc[folder]) acc[folder] = [];
 		acc[folder].push(file);

@@ -144,13 +144,45 @@ async function searchReposByLanguage(language, perPage = 100, page = 1, minStars
 }
 
 /**
- * Fetch files with specific name patterns from a repository
- * @param {string} owner - Repository owner.
- * @param {string} repo - Repository name.
- * @param {string[]} filePatterns - File name patterns to search for.
- * @returns {Promise<{path: string, content: string}[]>} - An array of files and their content.
+ * Checks if a file path matches any of the specified regex patterns
+ * @param {string} filePath - Path of the file to check
+ * @param {RegExp[]} matchRegexList - List of regex patterns to match (must match at least one)
+ * @param {RegExp[]|null} excludeRegexList - Optional list of regex patterns to exclude
+ * @returns {boolean} - True if the file matches required patterns and doesn't match exclusion patterns
  */
-async function getFileContents(owner, repo, filePatterns) {
+function isPatternMatching(filePath, matchRegexList, excludeRegexList = null) {
+	if (!matchRegexList || matchRegexList.length === 0) {
+		throw Error('Match regex patterns cannot be empty');
+	}
+
+	// Check if file matches any of the required patterns
+	const isMatching = matchRegexList.some((regex) => regex.test(filePath));
+
+	// If the file doesn't match any required patterns, return false
+	if (!isMatching) {
+		return false;
+	}
+
+	// If there are exclusion patterns, check if the file matches any of them
+	if (excludeRegexList && excludeRegexList.length > 0) {
+		const isExcluded = excludeRegexList.some((regex) => regex.test(filePath));
+		// Return false if the file matches any exclusion pattern
+		return !isExcluded;
+	}
+
+	// The file matched required patterns and didn't match any exclusion patterns
+	return true;
+}
+
+/**
+ * Fetch files from a repository matching regex patterns
+ * @param {string} owner - Repository owner
+ * @param {string} repo - Repository name
+ * @param {RegExp[]} matchRegexList - List of regex patterns to match file paths
+ * @param {RegExp[]|null} excludeRegexList - Optional list of regex patterns to exclude file paths
+ * @returns {Promise<{path: string, content: string}[]>} - An array of files and their content
+ */
+async function getFilesContents(owner, repo, matchRegexList, excludeRegexList = null) {
 	const repoRes = await github.get(`/repos/${owner}/${repo}`);
 	const defaultBranch = repoRes.data.default_branch || 'master';
 
@@ -163,21 +195,9 @@ async function getFileContents(owner, repo, filePatterns) {
 	for (const item of tree) {
 		if (item.type !== 'blob') continue;
 
-		for (const pattern of filePatterns) {
-			if (!pattern.includes('*')) {
-				if (item.path.toLowerCase().endsWith(pattern.toLowerCase())) {
-					matchingFiles.push(item);
-				}
-				continue;
-			}
-
-			if (pattern.startsWith('*.')) {
-				const extension = pattern.substring(1); // Get ".csproj"
-				if (item.path.toLowerCase().endsWith(extension.toLowerCase())) {
-					matchingFiles.push(item);
-				}
-				continue;
-			}
+		// Use the pattern matching utility function
+		if (isPatternMatching(item.path, matchRegexList, excludeRegexList)) {
+			matchingFiles.push(item);
 		}
 	}
 
@@ -210,8 +230,8 @@ async function getRepoLanguages(owner, repo) {
 
 const githubClient = {
 	searchReposByLanguage: errorHandlerDecorator(searchReposByLanguage),
-	getFileContents: errorHandlerDecorator(getFileContents),
 	getRepoLanguages: errorHandlerDecorator(getRepoLanguages),
+	getFilesContents: errorHandlerDecorator(getFilesContents),
 };
 export { RateLimitError, EndOfSeachError };
 export default githubClient;

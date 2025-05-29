@@ -136,20 +136,23 @@ export const parseJavaDependencies = async (repo) => {
 	const dependencyList = new RepoDependencyList({ id: repo.id });
 
 	// Get Java dependency files from GitHub
-	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, [
-		'pom.xml',
-		// 'build.gradle',
-		// 'build.gradle.kts',
-	]);
+	const dependencyFiles = await githubClient.getFilesContents(
+		repo.owner,
+		repo.name,
+		[
+			/pom\.xml$/i,
+			// /build\.gradle$/i,
+			// /build\.gradle\.kts$/i,
+		],
+		[/(sample|example|test)/i], // Exclude test/sample folders
+	);
 
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
-
-	if (allFiles.length === 0) {
+	if (dependencyFiles.length === 0) {
 		throw new UnprocessableRepoError('No supported Java dependency files found');
 	}
 
 	// Group dependency files by folder
-	const folderToFiles = allFiles.reduce((acc, file) => {
+	const folderToFiles = dependencyFiles.reduce((acc, file) => {
 		const folder = getFolderPath(file.path);
 		if (!acc[folder]) acc[folder] = [];
 		acc[folder].push(file);

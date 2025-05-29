@@ -89,15 +89,18 @@ export const parseGoModFileContent = (goFileContent) => {
 export const parseGoDependencies = async (repo) => {
 	const dependencyList = new RepoDependencyList({ id: repo.id });
 
-	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, ['go.mod']);
+	const dependencyFiles = await githubClient.getFilesContents(
+		repo.owner,
+		repo.name,
+		[/go\.mod$/i],
+		[/(sample|example|test)/i], // Exclude test/sample folders
+	);
 
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
-
-	if (allFiles.length === 0) {
+	if (dependencyFiles.length === 0) {
 		throw new UnprocessableRepoError('No supported Go dependency files found');
 	}
 
-	for (const file of allFiles) {
+	for (const file of dependencyFiles) {
 		const fileFolder = getFolderPath(file.path);
 		const dependencies = parseGoModFileContent(file.content);
 		dependencyList.projects.push(

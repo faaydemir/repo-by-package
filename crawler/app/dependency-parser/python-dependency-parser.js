@@ -283,19 +283,19 @@ export const parsePythonDependencies = async (repo) => {
 	const dependencyList = new RepoDependencyList({ id: repo.id });
 
 	// Get Python dependency files from GitHub
-	const dependencyFiles = await githubClient.getFileContents(repo.owner, repo.name, [
-		'requirements.txt',
-		'pyproject.toml',
-	]);
+	const dependencyFiles = await githubClient.getFilesContents(
+		repo.owner,
+		repo.name,
+		[/requirements\.txt$/i, /pyproject\.toml$/i],
+		[/(sample|example|test)/i], // Exclude test/sample folders
+	);
 
-	const allFiles = dependencyFiles.filter((file) => !file.path.match(/(sample|test|example)/i));
-
-	if (allFiles.length === 0) {
+	if (dependencyFiles.length === 0) {
 		throw new UnprocessableRepoError('No supported Python dependency files found');
 	}
 
 	// group dependency files by folder
-	const folderToFiles = allFiles.reduce((acc, file) => {
+	const folderToFiles = dependencyFiles.reduce((acc, file) => {
 		const folder = getFolderPath(file.path);
 		if (!acc[folder]) acc[folder] = [];
 		acc[folder].push(file);
