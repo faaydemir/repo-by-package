@@ -22,10 +22,6 @@ async function crawlReposTask() {
 						page += 1;
 						let maxStars = starCursor;
 						for (const repo of response.items) {
-							console.log(`${new Date()} - Saving repo ${repo.full_name} - ${repo.stargazers_count}`);
-							if (repo.stargazers_count > maxStars) {
-								maxStars = repo.stargazers_count;
-							}
 
 							const languageDetails = await githubClient.getRepoLanguages(repo.owner.login, repo.name);
 

@@ -160,12 +160,6 @@ class DependencyParser {
 			await this._clearRepoDependencies(repo.id);
 
 			for (const repoDependencyList of dependencies) {
-				for (const project of repoDependencyList.projects) {
-					console.log(`${new Date()} - Saving ${repoDependencyList.id} | ${project.packageProvider} | ${project.path}`);
-				}
-			}
-
-			for (const repoDependencyList of dependencies) {
 				await this._saveRepoDependencyList(repoDependencyList);
 			}
 
