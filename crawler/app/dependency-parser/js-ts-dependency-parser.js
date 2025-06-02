@@ -115,8 +115,7 @@ export const parseDependenciesFromPackageJson = (packageJsonContent) => {
 	try {
 		packageJson = JSON.parse(packageJsonContent);
 	} catch (error) {
-		console.error('Failed to parse package.json content:', error);
-		return [];
+		throw new UnprocessableRepoError('Invalid package.json content' + error.message);
 	}
 
 	const dependencies = packageJson.dependencies ?? {};

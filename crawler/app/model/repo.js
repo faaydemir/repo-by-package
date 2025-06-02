@@ -27,6 +27,7 @@ class Repo {
 		this.processible = data.processible;
 		this.languages = data.languages;
 		this.languageDetails = data.languageDetails;
+		this.hasParsableDependencies = data.hasParsableDependencies ?? false;
 	}
 
 	/**

@@ -10,32 +10,33 @@ datasource db {
 }
 
 model Repo {
-  id                 Int              @id @default(autoincrement())
-  githubId           BigInt?          @unique
-  owner              String
-  name               String
-  fullName           String?
-  url                String?
-  htmlUrl            String?
-  description        String?
-  language           String?
-  topics             String?
-  defaultBranch      String?
-  stargazersCount    Int?
-  watchersCount      Int?
-  forksCount         Int?
-  openIssuesCount    Int?
-  license            Json?
-  private            Boolean          @default(false)
-  createdAt          DateTime?
-  updatedAt          DateTime?
-  pushedAt           DateTime?
-  languages          String[]         @default([])
-  languageDetails    Json?
-  insertedAt         DateTime         @default(now())
-  packageProcessedAt DateTime?
-  processible        Boolean          @default(true)
-  repoRependencies   RepoDependency[]
+  id                      Int              @id @default(autoincrement())
+  githubId                BigInt?          @unique
+  owner                   String
+  name                    String
+  fullName                String?
+  url                     String?
+  htmlUrl                 String?
+  description             String?
+  language                String?
+  topics                  String?
+  defaultBranch           String?
+  stargazersCount         Int?
+  watchersCount           Int?
+  forksCount              Int?
+  openIssuesCount         Int?
+  license                 Json?
+  private                 Boolean          @default(false)
+  createdAt               DateTime?
+  updatedAt               DateTime?
+  pushedAt                DateTime?
+  languages               String[]         @default([])
+  languageDetails         Json?
+  insertedAt              DateTime         @default(now())
+  packageProcessedAt      DateTime?
+  processible             Boolean          @default(true)
+  repoRependencies        RepoDependency[]
+  hasParsableDependencies Boolean          @default(false)
 
   @@schema("private")
 }

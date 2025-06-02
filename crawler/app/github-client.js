@@ -14,13 +14,20 @@ const github = axios.create({
 
 class RateLimit {
 	/**
-	 *
 	 * @param {Date} rateLimitReset
 	 * @param {Number} rateLimitRemaining
 	 */
 	constructor(rateLimitReset, rateLimitRemaining) {
 		this.rateLimitReset = rateLimitReset;
 		this.rateLimitRemaining = rateLimitRemaining;
+	}
+	/*
+	 * Returns the time remaining until the rate limit resets in milliseconds.
+	 * @returns {number} Time remaining in milliseconds
+	 */
+	getRamaningTimeAsMs() {
+		const remainingTimeInMilliseconds = this.rateLimitReset.getTime() - Date.now();
+		return remainingTimeInMilliseconds > 0 ? remainingTimeInMilliseconds : 0;
 	}
 
 	static fromResponse(response) {
@@ -80,11 +87,25 @@ class RateLimitError extends Error {
 		super(message);
 		this.rateLimit = rateLimit;
 	}
+
+	static checkAndThrow(response) {
+		if (!(response && response.status === 403 && response.headers['x-ratelimit-remaining'] === '0')) return;
+
+		const rateLimit = RateLimit.fromResponse(response);
+		const message = response?.data?.message ?? response.statusText;
+		throw new RateLimitError(message, rateLimit);
+	}
 }
 
 class EndOfSeachError extends Error {
 	constructor(message) {
 		super(message);
+	}
+	static checkAndThrow(response) {
+		if (!(response && response.status === 422)) return;
+
+		const message = response?.data?.message ?? response.statusText;
+		throw new EndOfSeachError(message);
 	}
 }
 
@@ -101,13 +122,8 @@ function errorHandlerDecorator(func) {
 		} catch (error) {
 			const response = error.response;
 			if (response) {
-				const mesasge = response?.data?.message ?? response.statusText;
-				if (response.status === 403) {
-					throw new RateLimitError(mesasge, RateLimit.fromResponse(response));
-				} else if (response.status === 422) {
-					console.error('Error during repository search:', response.statusText);
-					throw new EndOfSeachError(mesasge);
-				}
+				RateLimitError.checkAndThrow(response);
+				EndOfSeachError.checkAndThrow(response);
 			}
 
 			throw error;
