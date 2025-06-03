@@ -95,8 +95,8 @@ class Repo {
 		return result ? new Repo(result) : null;
 	}
 
-	static async firstByGithubId(githubId) {
-		const result = await prisma.repo.findFirst({
+	static async findByGithubId(githubId) {
+		const result = await prisma.repo.findUnique({
 			where: { githubId },
 		});
 		return result ? new Repo(result) : null;

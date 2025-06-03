@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-const LEAST_START_COUNT_FOR_REPO = 1500;
+const LEAST_START_COUNT_FOR_REPO = 1499;
 const REPO_CRAWL_TASK_RUN_INTERVAL = 1000 * 60 * 60 * 6; // 6 hours
 const PARSE_DEPENDENCIES_TASK_INTERVAL = 1000 * 60 * 60 * 6; // 6 hours
 const REPO_REPROCESS_INTERVAL_DAYS = 7;

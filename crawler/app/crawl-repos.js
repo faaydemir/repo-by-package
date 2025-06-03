@@ -1,10 +1,24 @@
-import { LEAST_START_COUNT_FOR_REPO } from './constants.js';
+import { LEAST_START_COUNT_FOR_REPO, REPO_CRAWL_TASK_RUN_INTERVAL } from './constants.js';
 import githubClient, { RateLimitError, EndOfSeachError } from './github-client.js';
 import RepoCrawlTaskRun from './model/repo-crawl-task-run.js';
 import Repo from './model/repo.js';
 import sleep from './sleep.js';
 import Language from './languages.js';
+
 const SEARCH_REPO_TAKE = 100;
+
+const saveOrUpdateRepo = async (repoProps) => {
+	try {
+		const existingRepo = await Repo.findByGithubId(repoProps.githubId);
+		if (existingRepo) {
+			await Repo.update(existingRepo.id, repoProps);
+		} else {
+			await Repo.create(repoProps);
+		}
+	} catch (error) {
+		console.error(`Error saving or updating repo ${repoProps.fullName}:`, error);
+	}
+};
 
 async function crawlReposTask() {
 	while (true) {
@@ -18,10 +32,13 @@ async function crawlReposTask() {
 				let starCursor = taskRun.starCursor;
 				while (!taskRun.isCompleted) {
 					try {
-						const response = await githubClient.searchReposByLanguage(language, SEARCH_REPO_TAKE, page, starCursor);
 						page += 1;
+
+						const response = await githubClient.searchReposByLanguage(language, SEARCH_REPO_TAKE, page, starCursor);
 						let maxStars = starCursor;
 						for (const repo of response.items) {
+							console.log(`${new Date()} - Saving repo ${repo.full_name} - ${repo.stargazers_count}`);
+							if (repo.stargazers_count > maxStars) maxStars = repo.stargazers_count - 1;
 
 							const languageDetails = await githubClient.getRepoLanguages(repo.owner.login, repo.name);
 
@@ -50,15 +67,10 @@ async function crawlReposTask() {
 								languageDetails: languageDetails,
 							};
 
-							const existingRepo = await Repo.firstByGithubId(repo.id);
-							if (existingRepo) {
-								await Repo.update(existingRepo.id, repoProps);
-							} else {
-								await Repo.create(repoProps);
-							}
+							await saveOrUpdateRepo(repoProps);
 						}
-
-						await taskRun.updateRun(maxStars, response.items.length < SEARCH_REPO_TAKE);
+						const isSearchComplete = response.items.length < SEARCH_REPO_TAKE;
+						await taskRun.updateRun(maxStars, isSearchComplete);
 					} catch (error) {
 						if (error instanceof EndOfSeachError) {
 							page = 1;
@@ -68,19 +80,20 @@ async function crawlReposTask() {
 							const remainingTimeInMilliseconds = rateLimitResetTime.getTime() - Date.now();
 							console.error(`${new Date()} - Rate limit exceeded. Waiting for ${remainingTimeInMilliseconds} ms.`);
 							await sleep(remainingTimeInMilliseconds);
+							page = page - 1; // Retry the same page after waiting for rate limit reset
 						} else {
 							console.error(error);
-							await sleep(1000 * 60 * 1); // sleep for 1 a minute if there is an error (in case of network or db error)
+							await sleep(1000 * 10); // sleep for 10 seconds (in case of network or db error)
 						}
 					}
 				}
 			} catch (error) {
 				console.error(error);
-				await sleep(1000 * 60 * 1); // sleep for 1 a minute if there is an error (in case of network or db error)
+				await sleep(1000 * 10);
 			}
 		}
 
-		await sleep(1000 * 60 * 60 * 10); // sleep for 10 hours if crawling is completed
+		await sleep(REPO_CRAWL_TASK_RUN_INTERVAL);
 	}
 }
 

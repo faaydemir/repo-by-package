@@ -141,7 +141,7 @@ export const parseDependenciesFromPackageJson = (packageJsonContent) => {
  * @returns {Promise<RepoDependencyList>}
  */
 export const parseTSJSDependencies = async (repo) => {
-	const matchPatterns = [/package\.json$/i];
+	const matchPatterns = [/(^|\/|\\)package\.json$/i];
 	const excludePatterns = [/(sample|test|example|node_modules)/i];
 
 	const dependencyFiles = await githubClient.getFilesContents(repo.owner, repo.name, matchPatterns, excludePatterns);

@@ -13,11 +13,15 @@ class RepoCrawlTaskRun {
 	}
 
 	checkAndResetRun() {
+		if (!this.starCursor || this.starCursor < LEAST_START_COUNT_FOR_REPO) this.starCursor = LEAST_START_COUNT_FOR_REPO;
+
 		if (!this.lastRunAt) return;
+
 		const isADayPassedUntilLastRun = new Date() - this.lastRunAt > 1000 * 60 * 60 * 24;
+
 		if (isADayPassedUntilLastRun && this.isCompleted) {
 			this.isCompleted = false;
-			this.starCursor = LEAST_START_COUNT_FOR_REPO - 1;
+			this.starCursor = LEAST_START_COUNT_FOR_REPO;
 		}
 	}
 
@@ -71,7 +75,7 @@ class RepoCrawlTaskRun {
 		const result = await prisma.repoCrawlTaskRun.create({
 			data: {
 				taskKey,
-				starCursor: LEAST_START_COUNT_FOR_REPO - 1,
+				starCursor: LEAST_START_COUNT_FOR_REPO,
 				lastRunAt: new Date(),
 				isCompleted: false,
 			},
