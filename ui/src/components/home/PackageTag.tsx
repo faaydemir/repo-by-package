@@ -123,22 +123,40 @@ export const convertJavaPackageName = (name: string) => {
 	}
 	return name;
 };
-export function PackageTag({ name, repoCount, provider, size = 'md', className, showLink }: PackageTagProps) {
-	const sizeClasses = {
-		sm: 'py-0.5 text-xs',
-		md: 'py-1.5 text-sm',
-		lg: 'py-2.5 text-base',
-	};
+
+export const convertGoPackageName = (name: string) => {
+	const parts = name.split('/');
+	if (parts.length > 0 && parts[0].includes('.')) {
+		return parts.splice(1).join('/');
+	}
+	return name;
+};
+
+const sizeClasses = {
+	sm: 'py-0.5 text-xs',
+	md: 'py-1.5 text-sm',
+	lg: 'py-2.5 text-base',
+};
+
+const initPackageTagProps = (name: string, provider: string) => {
 	const color = uniqueColorGenerator(name);
-	const orginalName = name;
+	let displayName = name;
 	if (provider === 'Maven') {
-		name = convertJavaPackageName(name);
+		displayName = convertJavaPackageName(name);
+	}
+	if (provider === 'go') {
+		displayName = convertGoPackageName(name);
 	}
 
 	if (name.length > REPO_NAME_MAX_LENGTH) {
-		name = name.slice(0, REPO_NAME_MAX_LENGTH) + '...';
+		displayName = name.slice(0, REPO_NAME_MAX_LENGTH) + '...';
 	}
 
+	return { color, displayName };
+};
+
+export function PackageTag({ name, repoCount, provider, size = 'md', className, showLink }: PackageTagProps) {
+	const { color, displayName } = initPackageTagProps(name, provider);
 	return (
 		<div
 			className={cn(
@@ -156,10 +174,10 @@ export function PackageTag({ name, repoCount, provider, size = 'md', className, 
 				className="absolute left-2 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full transition-all duration-200"
 				style={{ backgroundColor: color || '#94a3b8' }}
 			/>
-			<span className="truncate tracking-tight">{name}</span>
+			<span className="truncate tracking-tight">{displayName}</span>
 			{repoCount !== undefined && <span className="ml-2 shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
 			{showLink && (
-				<Link className="ml-2 shrink-0 text-xs font-normal opacity-75" href={getPackageUrl(provider, orginalName)}>
+				<Link className="ml-2 shrink-0 text-xs font-normal opacity-75" href={getPackageUrl(provider, name)}>
 					<OpenPageIcon />
 				</Link>
 			)}
@@ -175,22 +193,7 @@ export function SelectedPackageTag({
 	size = 'md',
 	className,
 }: SelectedPackageTagProps) {
-	const sizeClasses = {
-		sm: 'py-0.5 text-xs',
-		md: 'py-1.5 text-sm',
-		lg: 'py-2.5 text-base',
-	};
-	const color = uniqueColorGenerator(name);
-
-	const orginalName = name;
-
-	if (provider === 'Maven') {
-		name = convertJavaPackageName(name);
-	}
-
-	if (name.length > REPO_NAME_MAX_LENGTH) {
-		name = name.slice(0, REPO_NAME_MAX_LENGTH) + '...';
-	}
+	const { color, displayName } = initPackageTagProps(name, provider);
 
 	return (
 		<div
@@ -220,14 +223,14 @@ export function SelectedPackageTag({
 						×
 					</span>
 				</div>
-				<span className="truncate tracking-tight">{name}</span>
+				<span className="truncate tracking-tight">{displayName}</span>
 				{repoCount !== undefined && <span className="ml-2 shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
 			</div>
 			{getPackageUrl(provider, name) && (
 				<a
 					className="h-full border-l border-gray-300 px-2 text-xs font-normal opacity-60 hover:opacity-100"
 					target="_blank"
-					href={getPackageUrl(provider, orginalName)}
+					href={getPackageUrl(provider, name)}
 				>
 					<OpenPageIcon className="h-5 w-5" />
 				</a>

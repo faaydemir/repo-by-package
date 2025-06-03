@@ -1,7 +1,7 @@
 import { Database } from '@/types/supabase';
 import { createClient } from '@supabase/supabase-js';
 import fetchRetry from 'fetch-retry';
-// Wrap the global fetch with fetch-retry
+// TODO: retry only for timeout
 const fetchWithRetry = fetchRetry(fetch, { retries: 2 });
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
