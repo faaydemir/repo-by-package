@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { OpenPageIcon } from '../common/Icon';
+import { TechIcon } from '../common/TechIcon';
 
 interface PackageTagProps {
 	name: string;
@@ -115,6 +116,12 @@ const getPackageUrl = (provider: string, name: string) => {
 	return '';
 };
 
+const getInternalPackageUrl = (provider: string, name: string) => {
+	// URL-encode the package name to handle special characters
+	const encodedName = encodeURIComponent(name);
+	return `/${provider}/${encodedName}`;
+};
+
 const REPO_NAME_MAX_LENGTH = 100;
 export const convertJavaPackageName = (name: string) => {
 	const parts = name.split(':');
@@ -155,7 +162,14 @@ const initPackageTagProps = (name: string, provider: string) => {
 	return { color, displayName };
 };
 
-export function PackageTag({ name, repoCount, provider, size = 'md', className, showLink }: PackageTagProps) {
+export function PackageTag({
+	name,
+	repoCount,
+	provider,
+	size = 'md',
+	className,
+	showLink
+}: PackageTagProps) {
 	const { color, displayName } = initPackageTagProps(name, provider);
 	return (
 		<div
@@ -177,7 +191,10 @@ export function PackageTag({ name, repoCount, provider, size = 'md', className, 
 			<span className="truncate tracking-tight">{displayName}</span>
 			{repoCount !== undefined && <span className="ml-2 shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
 			{showLink && (
-				<Link className="ml-2 shrink-0 text-xs font-normal opacity-75" href={getPackageUrl(provider, name)}>
+				<Link
+					className="ml-2 shrink-0 text-xs font-normal opacity-75"
+					href={getPackageUrl(provider, name)}
+				>
 					<OpenPageIcon />
 				</Link>
 			)}
@@ -227,14 +244,38 @@ export function SelectedPackageTag({
 				{repoCount !== undefined && <span className="ml-2 shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
 			</div>
 			{getPackageUrl(provider, name) && (
-				<a
+				<Link
 					className="h-full border-l border-gray-300 px-2 text-xs font-normal opacity-60 hover:opacity-100"
-					target="_blank"
 					href={getPackageUrl(provider, name)}
 				>
 					<OpenPageIcon className="h-5 w-5" />
-				</a>
+				</Link>
 			)}
 		</div>
+	);
+}
+
+export function PackageLink({ name, repoCount, provider, size = 'md', className }: PackageTagProps) {
+	const { color, displayName } = initPackageTagProps(name, provider);
+	return (
+		<Link
+			href={getInternalPackageUrl(provider, name)}
+			className={cn(
+				'group inline-flex items-center justify-between rounded-sm font-medium transition-all duration-200',
+				'text-gray-700 hover:bg-opacity-80',
+				'bg-opacity-100 hover:bg-opacity-100',
+				'border',
+				'gap-3',
+				'relative px-2',
+				sizeClasses[size],
+				className,
+			)}
+			style={{ backgroundColor: color + '10' || '#94a3b8' }}
+		>
+			<TechIcon tech={name} size="xs" />
+
+			<span className="truncate tracking-tight">{displayName}</span>
+			{repoCount !== undefined && <span className="shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
+		</Link>
 	);
 }

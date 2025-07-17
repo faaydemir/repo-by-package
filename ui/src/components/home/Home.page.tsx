@@ -7,9 +7,9 @@ import { SelectedPackages } from '@/components/home/SelectedPackages';
 import { RepositoryCard } from '@/components/home/RepositoryCard';
 import { SortButton } from '@/components/common/SortButton';
 import { Pagination as PaginationView } from '@/components/common/Pagination';
-import client, { Package, Pagination, Sort } from '@/client';
+import client, { Package, Pagination, ProviderStats, Repository, Sort } from '@/client';
 import { useSearchParams } from 'next/navigation';
-import { defaultState, State } from './home.state';
+import { AppInfo, defaultState, State } from './home.state';
 import { loadAppInfo, searchPackages, searchRepositories } from './home.actions';
 import useUpdateEffect from '@/utils/hooks/useUpdatedEfect';
 import Landing from './Landing';
@@ -17,13 +17,25 @@ import { useRouter } from 'next/navigation';
 import { BackIcon, SeachMenuIcon } from '../common/Icon';
 import { debounce } from '@/utils/debounce';
 import Spinner from '../common/Spinner';
+import PageInfo from '@/types/pageInfo';
 
-type Props = { providerId?: string };
+type StaticProps = {
+	pageInfo?: PageInfo;
+	providerStats?: ProviderStats[];
+	provider?: string;
+	package?: Package;
+	repositories?: Repository[];
+};
 
-export default function Home({ providerId }: Props) {
+type Props = {
+	staticProps?: StaticProps;
+};
+
+export default function Home({ staticProps }: Props) {
 	const [state, setState] = useState<State>({
 		...defaultState,
-		selectedProvider: providerId,
+		selectedProvider: staticProps?.provider,
+		repositories: staticProps?.repositories ?? [],
 	});
 	const [packageBarOpen, setSidebarOpen] = useState(false);
 	const searchParams = useSearchParams();
@@ -36,7 +48,10 @@ export default function Home({ providerId }: Props) {
 	const updateQueryParams = () => {
 		const params = new URLSearchParams();
 		if (state.selectedPackages.length > 0) {
-			params.set('packageIds', state.selectedPackages.map((p) => p.id).join(','));
+			const packageIds = state.selectedPackages.filter((p) => p.id != staticProps?.package?.id).map((p) => p.id);
+			if (packageIds.length > 0) {
+				params.set('packageIds', packageIds.join(','));
+			}
 		}
 		if (state.repoSort.field && state.repoSort.field !== defaultState.repoSort.field) {
 			params.set('sort', state.repoSort.field);
@@ -56,8 +71,14 @@ export default function Home({ providerId }: Props) {
 		const sortDirection = searchParams.get('direction') || defaultState.repoSort.direction;
 		const page = Number(searchParams.get('page')) || defaultState.repoPagination.page;
 		let selectedPackages: Package[] = [];
+
+		// If we have an initial package from the URL route, add it to selected packages
+
+		if (staticProps?.package) {
+			selectedPackages.push(staticProps.package);
+		}
 		if (packageIds.length > 0) {
-			selectedPackages = await client.searchPackagesById(packageIds);
+			selectedPackages = [...selectedPackages, ...(await client.searchPackagesById(packageIds))];
 		}
 
 		setState((prev) => ({
@@ -84,6 +105,8 @@ export default function Home({ providerId }: Props) {
 	};
 
 	const handlePackageRemove = (pkg: Package) => {
+		if (pkg.id == staticProps?.package?.id) {
+		}
 		setState((prev) => ({
 			...prev,
 			repoPagination: defaultState.repoPagination,
@@ -230,7 +253,11 @@ export default function Home({ providerId }: Props) {
 								</div>
 							</>
 						) : (
-							<>{!providerId && <Landing appInfo={state.appInfo} />}</>
+							<>
+								{staticProps?.pageInfo && (
+									<Landing pageInfo={staticProps?.pageInfo} providerStats={staticProps?.providerStats} />
+								)}
+							</>
 						)}
 					</div>
 				</div>

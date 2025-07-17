@@ -1,4 +1,4 @@
-import appInfo from './constant/appInfo';
+import { supportedProviders } from './constant/appInfo';
 import { supabase } from './lib/supabase';
 import cache from './utils/cache';
 
@@ -235,7 +235,7 @@ const getProviderStats = async (): Promise<ProviderStats[]> => {
 	data.sort((a, b) => b.repoCount - a.repoCount);
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	//@ts-expect-error
-	return data.filter((stat) => appInfo.supportedProviders.includes(stat.name)) as ProviderStats[];
+	return data.filter((stat) => supportedProviders.includes(stat.name)) as ProviderStats[];
 };
 
 const generateSearchRepositoriesCacheKey = (request: RepositoryFilter): string => {

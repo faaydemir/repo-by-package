@@ -1,19 +1,10 @@
-import {
-	Package,
-	PackageWithDetails,
-	Pagination,
-	ProviderStats,
-	RepoAndProjectCount,
-	Repository,
-	Sort,
-} from '@/client';
+import { Package, PackageWithDetails, Pagination, RepoAndProjectCount, Repository, Sort } from '@/client';
 
 export interface AppInfo {
 	name: string;
 	description: string;
 	icon: string;
 	favicon: string;
-	providerStats: ProviderStats[];
 }
 export interface State {
 	packages: PackageWithDetails[];
@@ -27,7 +18,6 @@ export interface State {
 	isPackagesLoading: boolean;
 	error?: string;
 	searchQuery?: string;
-	appInfo?: AppInfo;
 }
 
 export const defaultState: State = {
@@ -41,5 +31,4 @@ export const defaultState: State = {
 	isPackagesLoading: false,
 	searchQuery: undefined,
 	error: undefined,
-	appInfo: undefined,
 };
