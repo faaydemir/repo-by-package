@@ -11,6 +11,9 @@ interface PackageTagProps {
 	className?: string;
 	showLink?: boolean;
 }
+interface PackageLinkProps extends PackageTagProps {
+	unique: string;
+}
 
 interface SelectedPackageTagProps extends PackageTagProps {
 	onRemove: () => void;
@@ -247,11 +250,11 @@ export function SelectedPackageTag({
 	);
 }
 
-export function PackageLink({ name, repoCount, provider, size = 'md', className }: PackageTagProps) {
+export function PackageLink({ name, unique, repoCount, provider, size = 'md', className }: PackageLinkProps) {
 	const { color, displayName } = initPackageTagProps(name, provider);
 	return (
 		<Link
-			href={getInternalPackageUrl(provider, name)}
+			href={getInternalPackageUrl(provider, unique)}
 			className={cn(
 				'group inline-flex items-center justify-start rounded-sm font-medium transition-all duration-200',
 				'border',

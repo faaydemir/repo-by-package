@@ -8,6 +8,7 @@ class Dependency {
 		this.id = data.id;
 		this.name = data.name;
 		this.provider = data.provider;
+		this.unique = data.unique;
 	}
 
 	static async getById(id) {
@@ -15,6 +16,19 @@ class Dependency {
 			where: { id },
 		});
 		return result ? new Dependency(result) : null;
+	}
+
+	/**
+	 * Creates a URL-safe unique identifier from a dependency name
+	 * @param {string} name - The dependency name
+	 * @returns {string} URL-safe unique identifier
+	 */
+	static createUniqueIdentifier(name) {
+		return name
+			.toLowerCase()
+			.replace(/[^a-z0-9\-_.]/g, '-') // Replace non-alphanumeric chars with hyphens
+			.replace(/[-]+/g, '-') // Replace multiple consecutive hyphens with single hyphen
+			.replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 	}
 
 	/**@returns {Promise<Dependency>} */
@@ -41,11 +55,28 @@ class Dependency {
 	}
 
 	/**
+	 * Find dependency by unique identifier
+	 * @param {string} unique - The unique identifier
+	 * @returns {Promise<Dependency|null>}
+	 */
+	static async findByUnique(unique) {
+		const result = await prisma.dependency.findUnique({
+			where: { unique },
+		});
+		return result ? new Dependency(result) : null;
+	}
+
+	/**
 	 *
 	 * @param {Partial<Dependency>} data
 	 * @returns
 	 */
 	static async create(data) {
+		// Generate unique identifier if not provided
+		if (!data.unique && data.name) {
+			data.unique = Dependency.createUniqueIdentifier(data.name);
+		}
+
 		const result = await prisma.dependency.create({
 			data,
 		});

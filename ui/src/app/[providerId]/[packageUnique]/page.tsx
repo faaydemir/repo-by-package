@@ -6,12 +6,12 @@ import { Metadata } from 'next';
 import { getIconPath } from '@/components/common/TechIcon';
 
 export const generateStaticParams = async () => {
-	const params: { providerId: string; packageName: string }[] = [];
+	const params: { providerId: string; packageUnique: string }[] = [];
 
 	const providerStats = await client.getProviderStats();
 	for (const provider of providerStats) {
 		for (const dependency of provider.topDependencies) {
-			params.push({ providerId: provider.name, packageName: dependency.name });
+			params.push({ providerId: provider.name, packageUnique: dependency.name });
 		}
 	}
 
@@ -19,16 +19,18 @@ export const generateStaticParams = async () => {
 };
 
 type Props = {
-	params: Promise<{ providerId: string; packageName: string }>;
+	params: Promise<{ providerId: string; packageUnique: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-	const { providerId, packageName } = await params;
-	const imageUrl = getIconPath(packageName);
+	const { providerId, packageUnique } = await params;
+	const imageUrl = getIconPath(packageUnique);
+	const pkg = await client.getPackageByUnique(packageUnique, providerId);
+	const packageName = pkg ? pkg.name : packageUnique;
 
 	const title = `${packageName} | ${providerId} | Repo By Package`;
 	const description = `Browse ${packageName} open source project, real-world applications.`;
-	const url = `https://repo-by-package.com/${providerId}/${packageName}`;
+	const url = `https://repo-by-package.com/${providerId}/${packageUnique}`;
 
 	return {
 		title,
@@ -72,23 +74,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProviderPackagePage({ params }: Props) {
-	const { providerId, packageName } = await params;
+	const { providerId, packageUnique } = await params;
 
-	let pkg = null;
-
-	//TODO: create db function to get package by name
-	const searchResponse = await client.searchPackages({
-		query: packageName,
-		provider: providerId,
-		take: 1,
-	});
-
-	if (searchResponse.packages.length > 0) {
-		const p = searchResponse.packages[0];
-		if (p.name.toLowerCase() === packageName.toLowerCase()) {
-			pkg = p;
-		}
-	}
+	const pkg = await client.getPackageByUnique(packageUnique, providerId);
 	if (!pkg) {
 		return {
 			notFound: true,

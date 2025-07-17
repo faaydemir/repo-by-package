@@ -58,10 +58,12 @@ model RepoDependency {
 model Dependency {
   name               String
   provider           String
+  unique             String?
   id                 Int                 @id @default(autoincrement())
   dependencyMappings DependencyMapping[]
 
   @@unique([name, provider])
+  @@unique([unique,provider])
   @@schema("private")
 }
 

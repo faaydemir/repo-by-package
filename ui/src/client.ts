@@ -83,6 +83,8 @@ export interface LanguageStat {
 
 export interface DependencyCount {
 	name: string;
+	packageProvider: string;
+	unique: string;
 	count: number;
 }
 export interface ProviderStats {
@@ -225,6 +227,20 @@ const searchPackages = async (request: SearchPackageRequest): Promise<SearchPack
 	};
 };
 
+const getPackageByUnique = async (packageUnique: string, provider: string): Promise<PackageWithDetails | null> => {
+	const { data, error } = await supabase.rpc('get_package_by_unique', {
+		p_unique: packageUnique,
+		p_provider: provider,
+	});
+
+	if (error) {
+		console.error(error);
+		throw new Error(error.message);
+	}
+
+	return data?.[0] ?? null;
+};
+
 const getProviderStats = async (): Promise<ProviderStats[]> => {
 	const { data, error } = await supabase.rpc('get_all_provider_stats', {});
 
@@ -276,6 +292,12 @@ const client = {
 	searchPackages: cache({
 		keyGenerator: generateSearchPackagesCacheKey,
 		getter: searchPackages,
+		count: 20,
+	}),
+
+	getPackageByUnique: cache({
+		keyGenerator: (packageUnique, provider) => `${provider}-${packageUnique}`,
+		getter: getPackageByUnique,
 		count: 20,
 	}),
 

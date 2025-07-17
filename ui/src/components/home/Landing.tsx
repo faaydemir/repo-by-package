@@ -80,10 +80,11 @@ const Landing = ({ pageInfo, providerStats }: { pageInfo?: PageInfo; providerSta
 									<div className="flex flex-wrap items-center gap-2 py-2 md:border-t">
 										{provider.topDependencies
 											.slice(0, 20)
-											.map((dep: { name: string; count: number }, index: number) => (
+											.map((dep: { name: string; unique: string; count: number }, index: number) => (
 												<PackageLink
 													key={index}
 													name={dep.name}
+													unique={dep.unique}
 													provider={provider.name}
 													repoCount={dep.count}
 													showLink={true}
