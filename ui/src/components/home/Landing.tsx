@@ -34,7 +34,7 @@ const Landing = ({ pageInfo, providerStats }: { pageInfo?: PageInfo; providerSta
 								<Link
 									href={`/${provider.name}`}
 									key={index}
-									className="rounded-xs group flex h-full cursor-pointer flex-col border border-gray-300 bg-white p-3 transition-all duration-300 hover:border-gray-500"
+									className="group flex h-full cursor-pointer flex-col rounded-md border border-gray-300 bg-white p-3 transition-all duration-300 hover:border-gray-500"
 								>
 									<div className="flex h-full flex-1 flex-col gap-3">
 										<div className="flex items-center justify-between md:flex-col">
@@ -60,7 +60,7 @@ const Landing = ({ pageInfo, providerStats }: { pageInfo?: PageInfo; providerSta
 
 										<div className="mt-auto">
 											<span className="flex w-full items-center justify-center rounded-sm border border-transparent px-6 text-xs font-medium text-gray-400 transition-all group-hover:text-gray-600 md:py-3">
-												Browse {provider.name} packages
+												Browse {provider.name} repositories
 												<NextIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
 											</span>
 										</div>
@@ -70,14 +70,14 @@ const Landing = ({ pageInfo, providerStats }: { pageInfo?: PageInfo; providerSta
 						</div>
 						<div className="flex flex-col gap-6 pt-6 md:gap-6">
 							{providerStats?.map((provider, index) => (
-								<div key={index}>
-									<div className="flex items-center gap-2 border-gray-300 md:pb-2">
-										<TechIcon tech={provider.name} size="md" />
-										<h3 className="text-xl font-semibold text-gray-500 md:text-lg">
-											Most used {provider.name} packages
+								<div key={index} className="flex flex-col rounded-md border border-gray-300 bg-white px-4 py-2">
+									<div className="flex items-center gap-2 border-gray-300 p-2">
+										<TechIcon tech={provider.name} size="sm" />
+										<h3 className="text-xl text-gray-500 md:text-lg">
+											Most used <span className="font-semibold text-gray-600">{provider.name}</span> packages
 										</h3>
 									</div>
-									<div className="flex flex-wrap items-center gap-2">
+									<div className="flex flex-wrap items-center gap-2 py-2 md:border-t">
 										{provider.topDependencies
 											.slice(0, 20)
 											.map((dep: { name: string; count: number }, index: number) => (

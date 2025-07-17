@@ -9,8 +9,8 @@ import { SortButton } from '@/components/common/SortButton';
 import { Pagination as PaginationView } from '@/components/common/Pagination';
 import client, { Package, Pagination, ProviderStats, Repository, Sort } from '@/client';
 import { useSearchParams } from 'next/navigation';
-import { AppInfo, defaultState, State } from './home.state';
-import { loadAppInfo, searchPackages, searchRepositories } from './home.actions';
+import { defaultState, State } from './home.state';
+import { searchPackages, searchRepositories } from './home.actions';
 import useUpdateEffect from '@/utils/hooks/useUpdatedEfect';
 import Landing from './Landing';
 import { useRouter } from 'next/navigation';
@@ -173,7 +173,6 @@ export default function Home({ staticProps }: Props) {
 
 	useEffect(() => {
 		loadInitialState();
-		loadAppInfo(setState);
 	}, []);
 
 	return (

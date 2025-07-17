@@ -33,6 +33,7 @@ const SUPPORTED_TECHNOLOGIES = [
 	'typescript',
 	'vue',
 	'zod',
+	'lodash',
 ] as const;
 type SupportedTechnology = (typeof SUPPORTED_TECHNOLOGIES)[number];
 
@@ -73,7 +74,7 @@ export const TechIcon: React.FC<TechIconProps> = ({ tech, size = 'md', showText 
 	const sizeClass = getSizeClass(size);
 
 	if (!iconPath) {
-		return <span></span>;
+		return;
 	}
 
 	return (

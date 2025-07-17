@@ -1,17 +1,75 @@
 import Home from '@/components/home/Home.page';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import appInfo from '@/constant/appInfo';
+import client from '@/client';
+import { appInfo } from '@/constant/appInfo';
+
+// Force static generation (like getStaticProps)
+export const dynamic = 'force-static';
+// Revalidate every hour (like ISR)
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
 	title: appInfo.name,
 	description: appInfo.description,
+	keywords: [
+		'GitHub repositories',
+		'package dependencies',
+		'real-world applications',
+		'npm',
+		'pypi',
+		'maven',
+		'nuget',
+		'cargo',
+		'ruby gems',
+		'go modules',
+	],
+	authors: [{ name: 'Repo By Package' }],
+	creator: 'Repo By Package',
+	publisher: 'Repo By Package',
+	openGraph: {
+		type: 'website',
+		locale: 'en_US',
+		url: 'https://repo-by-package.com',
+		title: appInfo.name,
+		description: appInfo.description,
+		siteName: 'Repo By Package',
+		images: [
+			{
+				url: '/favicon.png',
+				width: 512,
+				height: 512,
+				alt: 'Repo By Package - Browse GitHub repositories by packages',
+			},
+		],
+	},
+	twitter: {
+		card: 'summary_large_image',
+		title: appInfo.name,
+		description: appInfo.description,
+		creator: '@repo_by_package',
+		images: ['/favicon.png'],
+	},
+	alternates: {
+		canonical: 'https://repo-by-package.com',
+	},
+	category: 'technology',
 };
 
-export default function Page() {
+export default async function Page() {
+	// Fetch app info server-side
+	const providerStats = await client.getProviderStats();
+	const staticProps = {
+		pageInfo: {
+			title: appInfo.name,
+			description: appInfo.description,
+		},
+		providerStats: providerStats,
+	};
+
 	return (
 		<Suspense fallback={<div>Loading...</div>}>
-			<Home />
+			<Home staticProps={staticProps} />
 		</Suspense>
 	);
 }

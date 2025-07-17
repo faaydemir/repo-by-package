@@ -162,21 +162,15 @@ const initPackageTagProps = (name: string, provider: string) => {
 	return { color, displayName };
 };
 
-export function PackageTag({
-	name,
-	repoCount,
-	provider,
-	size = 'md',
-	className,
-	showLink
-}: PackageTagProps) {
+export function PackageTag({ name, repoCount, provider, size = 'md', className, showLink }: PackageTagProps) {
 	const { color, displayName } = initPackageTagProps(name, provider);
 	return (
 		<div
 			className={cn(
 				'group inline-flex items-center justify-between rounded-sm font-medium transition-all duration-200',
-				'text-gray-700 hover:bg-opacity-80',
-				'bg-opacity-100 hover:bg-opacity-100',
+				'text-gray-700',
+				'bg-opacity-100',
+				'hover:border-gray-300',
 				'border',
 				'relative pl-7 pr-3',
 				sizeClasses[size],
@@ -191,10 +185,7 @@ export function PackageTag({
 			<span className="truncate tracking-tight">{displayName}</span>
 			{repoCount !== undefined && <span className="ml-2 shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
 			{showLink && (
-				<Link
-					className="ml-2 shrink-0 text-xs font-normal opacity-75"
-					href={getPackageUrl(provider, name)}
-				>
+				<Link className="ml-2 shrink-0 text-xs font-normal opacity-75" href={getPackageUrl(provider, name)}>
 					<OpenPageIcon />
 				</Link>
 			)}
@@ -216,8 +207,9 @@ export function SelectedPackageTag({
 		<div
 			className={cn(
 				'inline-flex items-center justify-between rounded-sm font-medium transition-all duration-200',
-				'text-gray-700 hover:bg-opacity-80',
-				'bg-opacity-100 hover:bg-opacity-100',
+				'text-gray-700',
+				'hover:border-gray-300',
+				'bg-opacity-100',
 				'border',
 				'py-0',
 				'pr-0',
@@ -261,11 +253,10 @@ export function PackageLink({ name, repoCount, provider, size = 'md', className 
 		<Link
 			href={getInternalPackageUrl(provider, name)}
 			className={cn(
-				'group inline-flex items-center justify-between rounded-sm font-medium transition-all duration-200',
-				'text-gray-700 hover:bg-opacity-80',
-				'bg-opacity-100 hover:bg-opacity-100',
+				'group inline-flex items-center justify-start rounded-sm font-medium transition-all duration-200',
 				'border',
 				'gap-3',
+				'text-gray-700 hover:border-gray-400',
 				'relative px-2',
 				sizeClasses[size],
 				className,
@@ -273,7 +264,6 @@ export function PackageLink({ name, repoCount, provider, size = 'md', className 
 			style={{ backgroundColor: color + '10' || '#94a3b8' }}
 		>
 			<TechIcon tech={name} size="xs" />
-
 			<span className="truncate tracking-tight">{displayName}</span>
 			{repoCount !== undefined && <span className="shrink-0 text-xs font-normal opacity-75">{repoCount}</span>}
 		</Link>

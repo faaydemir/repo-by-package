@@ -1,6 +1,5 @@
 import client, { RepositoryFilter, SearchPackageRequest } from '@/client';
 import { State } from './home.state';
-import appInfo from '@/constant/appInfo';
 
 let lastSearchPackagesIndex = 0;
 export const searchPackages = async (
@@ -48,18 +47,5 @@ export const searchRepositories = async (
 		setState((prev) => ({ ...prev, error: (error as Error).message ?? error }));
 	} finally {
 		setState((prev) => ({ ...prev, isReposLoading: false }));
-	}
-};
-
-export const loadAppInfo = async (setState: React.Dispatch<React.SetStateAction<State>>) => {
-	try {
-		const providerStats = await client.getProviderStats();
-		const info = {
-			...appInfo,
-			providerStats: providerStats,
-		};
-		setState((prev) => ({ ...prev, appInfo: info }));
-	} catch (error) {
-		setState((prev) => ({ ...prev, error: (error as Error).message ?? error }));
 	}
 };
