@@ -1,22 +1,38 @@
 import React from 'react';
 
 const SUPPORTED_TECHNOLOGIES = [
-	'javascript',
-	'go',
-	'rubygems',
-	'maven',
-	'typescript',
-	'python',
-	'c#',
-	'nuget',
-	'pypi',
-	'npm',
-	'github',
-	'java',
-	'kotlin',
-	'ruby',
+	'angular',
+	'axios',
 	'cargo',
-	'rust'
+	'csharp',
+	'express',
+	'github',
+	'go',
+	'grpc',
+	'java',
+	'javascript',
+	'junit',
+	'kotlin',
+	'matplotlib',
+	'maven',
+	'next',
+	'npm',
+	'nuget',
+	'numpy',
+	'pandas',
+	'pypi',
+	'pytest',
+	'python',
+	'rails',
+	'react',
+	'rspec',
+	'ruby',
+	'rubygems',
+	'rust',
+	'torch',
+	'typescript',
+	'vue',
+	'zod',
 ] as const;
 type SupportedTechnology = (typeof SUPPORTED_TECHNOLOGIES)[number];
 
@@ -43,7 +59,7 @@ const getSizeClass = (size: IconSize): string => {
 	}
 };
 
-const getIconPath = (tech: string): string => {
+export const getIconPath = (tech: string): string => {
 	let normalizedLang = tech.toLowerCase();
 	if (SUPPORTED_TECHNOLOGIES.includes(normalizedLang as SupportedTechnology)) {
 		if (normalizedLang == 'c#') normalizedLang = 'csharp';
@@ -57,7 +73,7 @@ export const TechIcon: React.FC<TechIconProps> = ({ tech, size = 'md', showText 
 	const sizeClass = getSizeClass(size);
 
 	if (!iconPath) {
-		return <span>❓</span>;
+		return <span></span>;
 	}
 
 	return (
