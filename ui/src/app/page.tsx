@@ -4,10 +4,9 @@ import type { Metadata } from 'next';
 import client from '@/client';
 import { appInfo } from '@/constant/appInfo';
 
-// Force static generation (like getStaticProps)
 export const dynamic = 'force-static';
-// Revalidate every hour (like ISR)
-export const revalidate = 3600;
+// Revalidate every 24 hours
+export const revalidate = 86400;
 
 export const metadata: Metadata = {
 	title: appInfo.name,
@@ -57,7 +56,6 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-	// Fetch app info server-side
 	const providerStats = await client.getProviderStats();
 	const staticProps = {
 		pageInfo: {

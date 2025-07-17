@@ -72,8 +72,6 @@ export default function Home({ staticProps }: Props) {
 		const page = Number(searchParams.get('page')) || defaultState.repoPagination.page;
 		let selectedPackages: Package[] = [];
 
-		// If we have an initial package from the URL route, add it to selected packages
-
 		if (staticProps?.package) {
 			selectedPackages.push(staticProps.package);
 		}

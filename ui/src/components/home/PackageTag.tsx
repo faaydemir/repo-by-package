@@ -120,7 +120,6 @@ const getPackageUrl = (provider: string, name: string) => {
 };
 
 const getInternalPackageUrl = (provider: string, name: string) => {
-	// URL-encode the package name to handle special characters
 	const encodedName = encodeURIComponent(name);
 	return `/${provider}/${encodedName}`;
 };

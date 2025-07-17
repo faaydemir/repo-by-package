@@ -5,13 +5,16 @@ import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { getIconPath } from '@/components/common/TechIcon';
 
+export const revalidate = 86400;
+
 export const generateStaticParams = async () => {
 	const params: { providerId: string; packageUnique: string }[] = [];
 
 	const providerStats = await client.getProviderStats();
 	for (const provider of providerStats) {
 		for (const dependency of provider.topDependencies) {
-			params.push({ providerId: provider.name, packageUnique: dependency.name });
+			if (!dependency.unique) continue;
+			params.push({ providerId: provider.name, packageUnique: dependency.unique });
 		}
 	}
 
