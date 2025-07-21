@@ -240,6 +240,7 @@ export function SelectedPackageTag({
 			{getPackageUrl(provider, name) && (
 				<Link
 					className="h-full border-l border-gray-300 px-2 text-xs font-normal opacity-60 hover:opacity-100"
+					target="_blank"
 					href={getPackageUrl(provider, name)}
 				>
 					<OpenPageIcon className="h-5 w-5" />
