@@ -1,4 +1,4 @@
-import Home from '@/components/home/Home.page';
+import Home, { HomePageStaticProps } from '@/components/home/Home.page';
 import client from '@/client';
 import React from 'react';
 import { Suspense } from 'react';
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 	const title = `${packageName} | ${providerId} | Repo By Package`;
 	const description = `Browse ${packageName} open source project, real-world applications.`;
-	const url = `https://repo-by-package.com/${providerId}/${packageUnique}`;
+	const url = `${process.env.NEXT_PUBLIC_BASE_URL}/${providerId}/${packageUnique}`;
 
 	return {
 		title,
@@ -92,9 +92,16 @@ export default async function ProviderPackagePage({ params }: Props) {
 			perPage: 30,
 		},
 	});
-	const staticProps = {
+
+	const { packages } = await client.searchPackages({
+		provider: providerId,
+		usedWithPackages: [pkg.id],
+	});
+
+	const staticProps: HomePageStaticProps = {
 		provider: providerId,
 		package: pkg,
+		packages: packages,
 		repositories: repositories,
 	};
 

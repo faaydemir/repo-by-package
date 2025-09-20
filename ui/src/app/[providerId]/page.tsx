@@ -1,3 +1,4 @@
+import client from '@/client';
 import { getIconPath } from '@/components/common/TechIcon';
 import Home from '@/components/home/Home.page';
 import { supportedProviders } from '@/constant/appInfo';
@@ -56,8 +57,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProviderId({ params }: Props) {
 	const { providerId } = await params;
+	const { packages } = await client.searchPackages({
+		provider: providerId,
+	});
 	const staticProps = {
 		provider: providerId,
+		packages,
 		pageInfo: {
 			title: `Browse ${providerId} Repositories`,
 			description: `Browse GitHub repositories that use packages from ${providerId}`,

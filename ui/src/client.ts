@@ -70,7 +70,6 @@ export interface SearchPackageRequest {
 	query?: string;
 	usedWithPackages?: number[];
 	provider?: string;
-	take?: number;
 }
 export interface RepoAndProjectCount {
 	repoCount: number;

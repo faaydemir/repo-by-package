@@ -57,11 +57,13 @@ export const metadata: Metadata = {
 
 export default async function Page() {
 	const providerStats = await client.getProviderStats();
+	const { packages } = await client.searchPackages({});
 	const staticProps = {
 		pageInfo: {
 			title: appInfo.name,
 			description: appInfo.description,
 		},
+		packages,
 		providerStats: providerStats,
 	};
 

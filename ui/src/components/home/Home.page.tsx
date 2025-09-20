@@ -7,7 +7,7 @@ import { SelectedPackages } from '@/components/home/SelectedPackages';
 import { RepositoryCard } from '@/components/home/RepositoryCard';
 import { SortButton } from '@/components/common/SortButton';
 import { Pagination as PaginationView } from '@/components/common/Pagination';
-import client, { Package, Pagination, ProviderStats, Repository, Sort } from '@/client';
+import client, { Package, PackageWithDetails, Pagination, ProviderStats, Repository, Sort } from '@/client';
 import { useSearchParams } from 'next/navigation';
 import { defaultState, State } from './home.state';
 import { searchPackages, searchRepositories } from './home.actions';
@@ -19,23 +19,26 @@ import { debounce } from '@/utils/debounce';
 import Spinner from '../common/Spinner';
 import PageInfo from '@/types/pageInfo';
 
-type StaticProps = {
+export type HomePageStaticProps = {
 	pageInfo?: PageInfo;
 	providerStats?: ProviderStats[];
 	provider?: string;
 	package?: Package;
+	packages?: PackageWithDetails[];
 	repositories?: Repository[];
 };
 
 type Props = {
-	staticProps?: StaticProps;
+	staticProps?: HomePageStaticProps;
 };
 
 export default function Home({ staticProps }: Props) {
 	const [state, setState] = useState<State>({
 		...defaultState,
+		selectedPackages: staticProps?.package ? [staticProps.package] : [],
 		selectedProvider: staticProps?.provider,
 		repositories: staticProps?.repositories ?? [],
+		packages: staticProps?.packages ?? [],
 	});
 	const [packageBarOpen, setSidebarOpen] = useState(false);
 	const searchParams = useSearchParams();
