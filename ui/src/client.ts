@@ -195,7 +195,7 @@ const searchPackagesById = async (packageIds: number[]): Promise<PackageWithDeta
 };
 
 const searchPackages = async (request: SearchPackageRequest): Promise<SearchPackageResponse> => {
-	const perPage = request?.usedWithPackages?.length ? 40 : 100;
+	const perPage = 40;
 
 	const { data, error } = await supabase.rpc('search_packages', {
 		p_name: request.query?.trim() ?? '',
