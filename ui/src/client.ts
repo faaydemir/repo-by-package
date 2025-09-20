@@ -195,10 +195,6 @@ const searchPackagesById = async (packageIds: number[]): Promise<PackageWithDeta
 };
 
 const searchPackages = async (request: SearchPackageRequest): Promise<SearchPackageResponse> => {
-	if (!request?.query && !request?.usedWithPackages && !request?.provider) {
-		throw new Error('Missing required fields');
-	}
-
 	const perPage = request?.usedWithPackages?.length ? 40 : 100;
 
 	const { data, error } = await supabase.rpc('search_packages', {

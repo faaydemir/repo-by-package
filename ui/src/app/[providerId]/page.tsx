@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 	const title = `${providerId} | Repo By Package`;
 	const description = `Browse open source repositories that use packages from ${providerId}. Discover projects, dependencies, and usage patterns.`;
-	const url = `https://repo-by-package.com/${providerId}`;
+	const url = `${process.env.NEXT_PUBLIC_BASE_URL}/${providerId}`;
 
 	return {
 		title,

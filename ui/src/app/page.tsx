@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 	openGraph: {
 		type: 'website',
 		locale: 'en_US',
-		url: 'https://repo-by-package.com',
+		url: process.env.NEXT_PUBLIC_BASE_URL,
 		title: appInfo.name,
 		description: appInfo.description,
 		siteName: 'Repo By Package',
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
 		images: ['/favicon.png'],
 	},
 	alternates: {
-		canonical: 'https://repo-by-package.com',
+		canonical: process.env.NEXT_PUBLIC_BASE_URL,
 	},
 	category: 'technology',
 };
