@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { GITHUB_TOKEN, LEAST_START_COUNT_FOR_REPO } from './constants.js';
+import { GITHUB_REQUEST_USAGE_PERCENT_THRESHOLD , GITHUB_TOKEN, LEAST_START_COUNT_FOR_REPO } from './constants.js';
 
 // Create an Axios instance with GitHub API defaults
 const github = axios.create({
@@ -10,7 +10,21 @@ const github = axios.create({
 	},
 });
 
-//TODO: add repo properties
+github.interceptors.response.use(
+	(response) => {
+		RateLimitError.checkAndThrowForThreshold(response);
+		return response;
+	},
+	(error) => {
+		// Global error handling logic (from errorHandlerDecorator)
+		const response = error.response;
+		if (response) {
+			RateLimitError.checkAndThrow(response);
+			EndOfSeachError.checkAndThrow(response);
+		}
+		return Promise.reject(error);
+	},
+);
 
 class RateLimit {
 	/**
@@ -95,6 +109,20 @@ class RateLimitError extends Error {
 		const message = response?.data?.message ?? response.statusText;
 		throw new RateLimitError(message, rateLimit);
 	}
+	static checkAndThrowForThreshold(response) {
+		if(!response) return;
+		if (GITHUB_REQUEST_USAGE_PERCENT_THRESHOLD  <= 0) return;
+		
+		const limit = parseInt(response.headers['x-ratelimit-limit']);
+		const remaining = parseInt(response.headers['x-ratelimit-remaining']);
+		const usedPercent = (limit - remaining) / limit;
+
+		if (usedPercent < GITHUB_REQUEST_USAGE_PERCENT_THRESHOLD ) return;
+
+		const rateLimit = RateLimit.fromResponse(response);
+		const message = `GitHub remaining requests threshold of ${GITHUB_REQUEST_USAGE_PERCENT_THRESHOLD } exceeded. Limit: ${limit}, Remaining: ${remaining} Used Percent: ${usedPercent.toFixed(2)}%`; 
+		throw new RateLimitError(message, rateLimit);
+	}
 }
 
 class EndOfSeachError extends Error {
@@ -109,28 +137,6 @@ class EndOfSeachError extends Error {
 	}
 }
 
-/**
- * @template TFunction
- * @param {TFunction} func
- * @returns {TFunction}
- * */
-function errorHandlerDecorator(func) {
-	async function wrapper(...args) {
-		try {
-			const result = await func.apply(this, args);
-			return result;
-		} catch (error) {
-			const response = error.response;
-			if (response) {
-				RateLimitError.checkAndThrow(response);
-				EndOfSeachError.checkAndThrow(response);
-			}
-
-			throw error;
-		}
-	}
-	return wrapper;
-}
 
 /**
  * Search repositories by a given language.
@@ -246,9 +252,9 @@ async function getRepoLanguages(owner, repo) {
 }
 
 const githubClient = {
-	searchReposByLanguage: errorHandlerDecorator(searchReposByLanguage),
-	getRepoLanguages: errorHandlerDecorator(getRepoLanguages),
-	getFilesContents: errorHandlerDecorator(getFilesContents),
+	searchReposByLanguage,
+	getRepoLanguages,
+	getFilesContents,
 };
 export { RateLimitError, EndOfSeachError };
 export default githubClient;
