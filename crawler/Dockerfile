@@ -1,11 +1,15 @@
 FROM node:20-alpine
-RUN apk add --no-cache curl iputils bind-tools netcat-openbsd
+
 WORKDIR /app
+
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --only=production
+
 COPY prisma ./prisma/
 RUN npx prisma generate
+
 COPY . .
 
-ENV NODE_ENV development
+ENV NODE_ENV=production
+
 CMD ["node", "main.js"]

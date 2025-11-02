@@ -131,7 +131,7 @@ export const parseRequirementsContent = (content) => {
 
 		dependencies.push(
 			new RepoDependency({
-				name: name.trim(),
+				name: name.replaceAll("~", "").trim(),
 				provider: 'pypi',
 			}),
 		);

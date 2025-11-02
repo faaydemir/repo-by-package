@@ -14,11 +14,10 @@ import { parseJavaDependencies as parseJavaKotlinDependencies } from './dependen
 import { parseRubyDependencies } from './dependency-parser/ruby-dependency-parser.js';
 import { parseCSharpDependencies } from './dependency-parser/csharp-dependency-parser.js';
 import { parseRustDependencies } from './dependency-parser/rust-dependency-parser.js';
-import { RepoDependencyList } from './repo-dependency-list.js';
 import DependencyMapping from './model/dependency-mapping.js';
 const REPO_TAKE_COUNT = 10;
 const PARSER_WORKER_COUNT = 5;
-class ParserMapping {
+export class ParserMapping {
 	/**
 	 * @param {string | string[]} language
 	 * @param {(repo: Repo) => Promise<RepoDependencyList>} parserFunction
@@ -33,7 +32,7 @@ class ParserMapping {
 	}
 }
 
-class DependencyParser {
+export class DependencyParser {
 	/**
 	 * @param {ParserMapping[]} parserMappings
 	 * @param {number} [workerCount=10]
@@ -117,7 +116,10 @@ class DependencyParser {
 		}
 		return applicableParsers;
 	}
-
+	
+	/**
+	 * @param {Repo} repo
+	 */
 	async _parseAndSaveDependencies(repo) {
 		try {
 			const dependencies = [];
@@ -157,15 +159,16 @@ class DependencyParser {
 				}
 			}
 
-			await this._clearRepoDependencies(repo.id);
+			await repo.updatePackageStatus(hasParsableDependencies);
 
+			await this._clearRepoDependencies(repo.id);
 			for (const repoDependencyList of dependencies) {
 				await this._saveRepoDependencyList(repoDependencyList);
 			}
-
-			await Repo.update(repo.id, { packageProcessedAt: new Date(), hasParsableDependencies });
+			await repo.packageProcessedCompleted();
 		} catch (error) {
 			console.error(`${new Date()} - Error processing repo ${repo.id} | ${repo.fullName}: ${error.message}`);
+			await repo.packageProcessedFailed();
 		}
 	}
 	async _clearRepoDependencies(repoId) {
@@ -221,15 +224,26 @@ class DependencyParser {
 				(dep, index, self) => index === self.findIndex((t) => t.name === dep.name && t.provider === dep.provider),
 			);
 
-			const depdendencyMappings = await Promise.all(
-				uniqueDependencies.map(async (dep) => {
-					let dependency = await Dependency.getOrCreateCached(dep.name, dep.provider);
-					return new DependencyMapping({
+			// const depdendencyMappings = await Promise.all(
+			// 	uniqueDependencies.map(async (dep) => {
+			// 		let dependency = await Dependency.getOrCreateCached(dep.name, dep.provider);
+			// 		return new DependencyMapping({
+			// 			repoId: repoDependencyList.id,
+			// 			dependencyId: dependency.id,
+			// 		});
+			// 	}),
+			// );
+
+			const depdendencyMappings = [];
+			for (const dep of uniqueDependencies) {
+				let dependency = await Dependency.getOrCreateCached(dep.name, dep.provider);
+				depdendencyMappings.push(
+					new DependencyMapping({
 						repoId: repoDependencyList.id,
 						dependencyId: dependency.id,
-					});
-				}),
-			);
+					}),
+				);
+			}
 
 			await prisma.$transaction(
 				async (tx) => {
@@ -257,15 +271,19 @@ class DependencyParser {
  */
 const processRepos = async (dependencyParser, fetchRepo, taskRun) => {
 	do {
-		const repos = await fetchRepo(taskRun.idCursor);
-		if (repos.length === 0) break;
+		try {
+			const repos = await fetchRepo(taskRun.idCursor);
+			if (repos.length === 0) break;
 
-		for (const repo of repos) {
-			while (!dependencyParser.tryEnqueue(repo)) {
-				await sleep(2000); // Wait for a second before trying again
+			for (const repo of repos) {
+				while (!dependencyParser.tryEnqueue(repo)) {
+					await sleep(2000); // Wait for a second before trying again
+				}
 			}
+			await taskRun.updateRun(repos[repos.length - 1].id);
+		} catch (error) {
+			console.error(error);
 		}
-		await taskRun.updateRun(repos[repos.length - 1].id);
 	} while (true);
 	await taskRun.completed();
 };

@@ -34,9 +34,9 @@ model Repo {
   languageDetails         Json?
   insertedAt              DateTime         @default(now())
   packageProcessedAt      DateTime?
-  processible             Boolean          @default(true)
-  repoRependencies        RepoDependency[]
   hasParsableDependencies Boolean          @default(false)
+  isParseFailed           Boolean?         @default(false)
+  repoRependencies        RepoDependency[]
 
   @@schema("private")
 }

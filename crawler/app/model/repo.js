@@ -24,10 +24,10 @@ class Repo {
 		this.pushedAt = data.pushedAt;
 		this.insertedAt = data.insertedAt;
 		this.packageProcessedAt = data.packageProcessedAt;
-		this.processible = data.processible;
 		this.languages = data.languages;
 		this.languageDetails = data.languageDetails;
 		this.hasParsableDependencies = data.hasParsableDependencies ?? false;
+		this.isParseFailed = data.isParseFailed ?? false;
 	}
 
 	/**
@@ -117,6 +117,25 @@ class Repo {
 		return prisma.repo.update({
 			where: { id },
 			data: updates,
+		});
+	}
+
+	async packageProcessedFailed() {
+		await prisma.repo.update({
+			where: { id: this.id },
+			data: { isParseFailed: true },
+		});
+	}
+	async packageProcessedCompleted() {
+		await prisma.repo.update({
+			where: { id: this.id },
+			data: { packageProcessedAt: new Date(), isParseFailed: false },
+		});
+	}
+	async updatePackageStatus(hasParsableDependencies) {
+		await prisma.repo.update({
+			where: { id: this.id },
+			data: { hasParsableDependencies },
 		});
 	}
 }

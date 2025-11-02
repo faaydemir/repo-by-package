@@ -55,18 +55,6 @@ class Dependency {
 	}
 
 	/**
-	 * Find dependency by unique identifier
-	 * @param {string} unique - The unique identifier
-	 * @returns {Promise<Dependency|null>}
-	 */
-	static async findByUnique(unique) {
-		const result = await prisma.dependency.findUnique({
-			where: { unique },
-		});
-		return result ? new Dependency(result) : null;
-	}
-
-	/**
 	 *
 	 * @param {Partial<Dependency>} data
 	 * @returns
